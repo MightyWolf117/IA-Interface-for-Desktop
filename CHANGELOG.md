@@ -142,6 +142,10 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Fixed
 
+- **Resolución de Dependencias en GitHub Actions y Compatibilidad de NumPy**:
+  - Se corrigió el fallo de compilación en el runner de GitHub Actions donde `numpy==2.5.2` requería estrictamente Python >= 3.12 mientras el workflow corría sobre 3.11.
+  - Se actualizó el entorno de compilación en [.github/workflows/release.yml](.github/workflows/release.yml) y [.github/workflows/ci.yml](.github/workflows/ci.yml) a Python 3.12 nativo.
+  - Se flexibilizó la restricción de versión en [backend/requirements.txt](backend/requirements.txt) a `numpy>=1.26.0,<3.0.0` y se inyectó la cabecera `--extra-index-url https://download.pytorch.org/whl/cu124` para resolución automática de PyTorch CUDA en entornos limpios de CI.
 - **Detección y Reconocimiento de GPU (NVIDIA RTX 3050 6GB)**:
   - Se corrigió el problema raíz donde la VRAM se mostraba como `0 / 1 MB [0%]`. En Windows con Python 3.13, los procesos trabajadores generados por Uvicorn (`spawn_main`) recurrían a `sys._base_executable` apuntando al Python global (sin PyTorch ni CUDA) en lugar del entorno `.venv`.
   - Se configuró explícitamente `multiprocessing.set_executable(sys.executable)` y `sys._base_executable = sys.executable` en [run.py](backend/run.py), además de inyectar `VIRTUAL_ENV` y `PATH` en el entorno heredado.
