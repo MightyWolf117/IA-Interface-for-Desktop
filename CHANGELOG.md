@@ -142,9 +142,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Fixed
 
-- **Corrección de Límite de Tamaño en Empaquetado Windows (Error WiX LGHT0001 / CAB 2GB Limit)**:
-  - Se diagnosticó el fallo catastrófico en `light.exe` (`error LGHT0001: CreateCabFinish 0x8000FFFF`), causado por la limitación estricta de 2 GB inherente al motor de compresión Microsoft Cabinet (.cab) de WiX 3 al intentar empaquetar distribuciones completas de PyTorch con CUDA.
-  - Se configuró el empaquetado de Windows centrado en **NSIS** (`targets: "nsis"` en [interface/src-tauri/tauri.conf.json](interface/src-tauri/tauri.conf.json)), el cual no está sujeto a límites de cabinet, compila de forma estable paquetes superiores a 2 GB e incorpora la interfaz gráfica personalizada Cyberpunk HUD con pantalla obligatoria de aceptación de licencias.
+- **Corrección Definitiva de Límite de Tamaño en Instaladores Windows (Error 2GB en WiX y NSIS / Error mmapping file #12345)**:
+  - **Diagnóstico Integral**: Tanto WiX 3 (`light.exe : error LGHT0001 : Catastrophic failure CreateCabFinish`) como NSIS estándar de 32 bits (`makensis.exe : Internal compiler error #12345: error mmapping file is out of range`) poseen límites arquitectónicos estrictos e insuperables de 2.0 GB (`2,147,483,647 bytes`) al empaquetar archivos dentro de un único instalador, colapsando ante la distribución completa de PyTorch CUDA (~2.8 GB).
+  - **Transición a Inno Setup 6 (64-bit)**: Se desacopló la fase de empaquetado del comando interno de Tauri (`tauri build --no-bundle`) y se implementó un compilador dedicado con Inno Setup 6 en [installer/cyber-ia.iss](installer/cyber-ia.iss). Inno Setup 6 soporta nativamente arquitecturas de 64 bits sin límite de tamaño de archivo, implementa compresión LZMA2-Ultra (reduciendo significativamente el peso final) y garantiza:
+    - Pantalla de aceptación obligatoria de licencias y políticas éticas en [INSTALLER_LICENSE.txt](interface/src-tauri/INSTALLER_LICENSE.txt) previa a la instalación.
+    - Personalización visual Cyberpunk HUD completa (banner lateral [nsis_sidebar.bmp](interface/src-tauri/icons/nsis_sidebar.bmp), cabecera [inno_header.bmp](interface/src-tauri/icons/inno_header.bmp) e icono oficial [icon.ico](interface/src-tauri/icons/icon.ico)).
+    - Creación de accesos directos en Menú Inicio y Escritorio, y registro de desinstalación limpia en Windows.
+  - **Edición Portable (.zip)**: En [.github/workflows/release.yml](.github/workflows/release.yml) se añadió la generación paralela de `CYBER-IA-v1.0.0-Windows-x64-Portable.zip`, ofreciendo una alternativa directa sin instalación para usuarios que requieran portabilidad total.
 - **Resolución de Dependencias en GitHub Actions y Compatibilidad de NumPy**:
   - Se corrigió el fallo de compilación en el runner de GitHub Actions donde `numpy==2.5.2` requería estrictamente Python >= 3.12 mientras el workflow corría sobre 3.11.
   - Se actualizó el entorno de compilación en [.github/workflows/release.yml](.github/workflows/release.yml) y [.github/workflows/ci.yml](.github/workflows/ci.yml) a Python 3.12 nativo.

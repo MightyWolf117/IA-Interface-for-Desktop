@@ -23,7 +23,7 @@
     }
   },
   "bundle": {
-    "active": true,
+    "active": false,
     "targets": "nsis",
     "publisher": "MightyWolf117",
     "copyright": "Copyright (C) 2026 MightyWolf117 and Contributors",
