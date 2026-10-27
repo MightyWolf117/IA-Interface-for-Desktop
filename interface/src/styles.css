@@ -1,0 +1,12 @@
+/* ==========================================================================
+   CYBER-IA // MODULAR CSS MANIFEST
+   ========================================================================== */
+
+@import "./css/variables.css";
+@import "./css/base.css";
+@import "./css/header.css";
+@import "./css/diffusion.css";
+@import "./css/chat.css";
+@import "./css/api-control.css";
+@import "./css/modal.css";
+@import "./css/alerts.css";

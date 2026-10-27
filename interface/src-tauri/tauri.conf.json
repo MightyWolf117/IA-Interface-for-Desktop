@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CYBER-IA",
+  "version": "1.0.0",
+  "identifier": "com.mightywolf.cyberia",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "CYBER-IA // Neural Desktop Interface",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 880,
+        "minHeight": 640,
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "MightyWolf117",
+    "copyright": "Copyright (C) 2026 MightyWolf117 and Contributors",
+    "license": "GPL-3.0",
+    "licenseFile": "INSTALLER_LICENSE.txt",
+    "shortDescription": "CYBER-IA // Neural Desktop Interface for Local Generative AI & LLMs",
+    "resources": [
+      "resources/**/*"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "headerImage": "icons/nsis_header.bmp",
+        "sidebarImage": "icons/nsis_sidebar.bmp",
+        "installerIcon": "icons/icon.ico",
+        "installMode": "currentUser"
+      },
+      "wix": {
+        "bannerPath": "icons/wix_banner.bmp",
+        "dialogImagePath": "icons/wix_dialog.bmp"
+      }
+    }
+  }
+}

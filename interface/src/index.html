@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="es" data-theme="cyan">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CYBER-IA // Neural Desktop Interface</title>
+    <!-- Google Cyberpunk Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="/main.js" defer></script>
+  </head>
+
+  <body>
+    <!-- Cyberpunk Scanlines & Vignette Overlay -->
+    <div class="cyber-scanlines" id="scanlines-layer"></div>
+    <div class="cyber-vignette"></div>
+    <div class="cyber-grid-background"></div>
+
+    <div class="app-layout">
+      <!-- TOP HUD HEADER -->
+      <header class="cyber-header">
+        <div class="header-brand">
+          <div class="brand-icon-wrapper">
+            <img src="favicon.png" alt="CYBER-IA" class="brand-logo-img" />
+            <div class="pulse-ring"></div>
+          </div>
+          <div class="brand-text">
+            <div class="brand-title" data-text="CYBER-IA">CYBER-IA</div>
+            <div class="brand-sub">NEURAL DESKTOP v1.0.0 // TAURI v2</div>
+          </div>
+        </div>
+
+        <!-- Mode Navigation Tabs -->
+        <nav class="header-modes-nav">
+          <button class="nav-mode-btn active" data-target="view-diffusion" id="tab-diffusion">
+            <span class="mode-icon">⚡</span>
+            <span>DIFUSIÓN IA</span>
+          </button>
+          <button class="nav-mode-btn" data-target="view-chat" id="tab-chat">
+            <span class="mode-icon">💬</span>
+            <span>CHAT LLM</span>
+          </button>
+          <button class="nav-mode-btn" data-target="view-api-control" id="tab-api-control">
+            <span class="mode-icon">⚙</span>
+            <span>API CONTROL</span>
+          </button>
+        </nav>
+
+        <!-- Real-Time Telemetry HUD (< 100ms WebSocket stream) -->
+        <div class="header-telemetry">
+          <div class="hud-pill" id="vram-pill" title="VRAM de GPU asignada / reservada">
+            <span class="status-dot green" id="vram-dot"></span>
+            <span class="hud-label">VRAM:</span>
+            <span class="hud-val" id="hud-vram-text">-- / -- MB</span>
+          </div>
+          <div class="hud-pill" id="ram-pill" title="Memoria RAM del sistema">
+            <span class="hud-label">RAM:</span>
+            <span class="hud-val" id="hud-ram-text">-- / -- GB</span>
+          </div>
+          <div class="hud-pill" id="ws-pill" title="WebSocket de ultra baja latencia (<80ms)">
+            <span class="hud-label">WS:</span>
+            <span class="hud-val" id="hud-ws-text">CONECTANDO...</span>
+          </div>
+          <div class="hud-pill clock-pill">
+            <span class="hud-val" id="cyber-clock">00:00:00 // UTC</span>
+          </div>
+        </div>
+
+        <!-- Theme Accent & Visual FX Controls -->
+        <div class="header-controls">
+          <div class="neon-selector" title="Seleccionar Acento Neón">
+            <button class="neon-dot-btn cyan active" data-color="cyan" aria-label="Cyan Neon"></button>
+            <button class="neon-dot-btn pink" data-color="pink" aria-label="Pink Neon"></button>
+            <button class="neon-dot-btn amber" data-color="amber" aria-label="Amber Neon"></button>
+            <button class="neon-dot-btn green" data-color="green" aria-label="Green Neon"></button>
+          </div>
+          <button id="toggle-scanlines-btn" class="cyber-btn cyber-btn-mini" title="Alternar Scanlines">
+            SCANLINES: ON
+          </button>
+        </div>
+      </header>
+
+      <!-- CRITICAL SYSTEM ALERT BANNER (Triggers on VRAM > 88% or RAM > 90%) -->
+      <aside class="critical-alert-banner" id="system-critical-alert" style="display: none;" role="alert">
+        <div class="alert-left-content">
+          <span class="alert-hazard-glyph">⚠️</span>
+          <div class="alert-text-block">
+            <div class="alert-headline">
+              <span>ALERTA CRÍTICA DE ESTABILIDAD DEL SISTEMA</span>
+              <span class="alert-metric-tag" id="alert-metric-tag">VRAM CRÍTICA</span>
+            </div>
+            <div class="alert-description" id="alert-desc">
+              El consumo de recursos ha alcanzado un límite peligroso que puede desestabilizar la GPU o provocar el bloqueo de controladores.
+            </div>
+          </div>
+        </div>
+        <div class="alert-actions-cluster">
+          <button type="button" class="cyber-btn-alert-purge" id="alert-purge-btn">PURGAR VRAM AHORA</button>
+          <button type="button" class="cyber-btn-alert-offload" id="alert-offload-btn">ACTIVAR MODO AHORRO</button>
+          <button type="button" class="alert-dismiss-btn" id="alert-dismiss-btn" title="Descartar Advertencia">✕</button>
+        </div>
+      </aside>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 1: DIFUSIÓN IA (MULTIMEDIA STUDIO) -->
+      <!-- ================================================================= -->
+      <main class="view-container active" id="view-diffusion">
+        <!-- Diffusion HUD Subheader -->
+        <div class="sub-hud-bar">
+          <div class="model-info-cluster">
+            <div class="cluster-badge">MOTOR ACTIVO</div>
+            <div class="cluster-title" id="diff-model-name">NO INICIALIZADO (SELECCIONAR MODELO)</div>
+            <div class="cluster-tags" id="diff-model-tags">
+              <span class="cyber-tag" id="tag-arch-mode">ARQUITECTURA: NINGUNA</span>
+              <span class="cyber-tag" id="tag-memory-mode">PERFIL: EQUILIBRADO (&lt;=65%)</span>
+              <span class="cyber-tag" id="tag-transfer-mode">SALIDA: BASE64</span>
+              <span class="cyber-tag" id="tag-lora-mode">LORA: NINGUNO</span>
+            </div>
+          </div>
+          <div class="cluster-actions">
+            <button class="cyber-btn cyber-btn-primary" id="open-config-btn">
+              <span>CONFIGURAR / CAMBIAR MODELO</span>
+              <span class="btn-arrow">⚙</span>
+            </button>
+            <button class="cyber-btn cyber-btn-danger" id="unload-model-btn" title="Liberar VRAM y RAM">
+              <span>DESCARGAR VRAM</span>
+              <span class="btn-arrow">⏏</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Diffusion Studio Grid -->
+        <div class="diffusion-studio-layout">
+          <!-- LEFT COLUMN: CONTROLS & PROMPTING -->
+          <div class="studio-controls-pane">
+            <!-- Prompt Matrix Form -->
+            <form id="diffusion-form" class="studio-form">
+              <div class="control-box">
+                <label class="control-label" for="prompt-input">
+                  <span class="neon-glyph">◈</span> PROMPT POSITIVO
+                </label>
+                <textarea
+                  id="prompt-input"
+                  class="cyber-textarea"
+                  rows="3"
+                  placeholder="Describe la escena multimedia... (ej: Cyberpunk futuristic hacker in neon city, intricate cybernetic implants, 8k octane render)"
+                  required
+                ></textarea>
+                <!-- Quick Preset Chips -->
+                <div class="preset-chips-row">
+                  <button type="button" class="preset-chip" data-prompt="Cyberpunk city with neon lights, flying cars, rain reflections, volumetric fog, highly detailed 8k">#CYBER_CITY</button>
+                  <button type="button" class="preset-chip" data-prompt="Futuristic mech warrior standing in neon hangar, glowing circuits, hyperrealistic concept art">#MECH_WARRIOR</button>
+                  <button type="button" class="preset-chip" data-prompt="Synthwave retro landscape, digital grid mountain, glowing sunset wireframe 80s aesthetics">#SYNTHWAVE</button>
+                  <button type="button" class="preset-chip" data-prompt="Netrunner female portrait, neon glasses, cyberdeck interface holographic HUD, octane render">#NETRUNNER</button>
+                </div>
+              </div>
+
+              <div class="control-box">
+                <label class="control-label" for="neg-prompt-input">
+                  <span class="neon-glyph">✖</span> PROMPT NEGATIVO
+                </label>
+                <textarea
+                  id="neg-prompt-input"
+                  class="cyber-textarea small"
+                  rows="2"
+                  placeholder="Elementos no deseados..."
+                >ugly, deformed, disfigured, poor details, bad anatomy, blurry, watermark, signature</textarea>
+              </div>
+
+              <!-- Generation Sliders Grid -->
+              <div class="sliders-grid">
+                <div class="slider-box">
+                  <div class="slider-header">
+                    <span>PASOS (STEPS)</span>
+                    <span class="slider-val" id="steps-val">20</span>
+                  </div>
+                  <input type="range" id="steps-slider" min="1" max="50" value="20" class="cyber-range" />
+                </div>
+
+                <div class="slider-box">
+                  <div class="slider-header">
+                    <span>CFG GUIDANCE</span>
+                    <span class="slider-val" id="cfg-val">7.5</span>
+                  </div>
+                  <input type="range" id="cfg-slider" min="1.0" max="15.0" step="0.5" value="7.5" class="cyber-range" />
+                </div>
+              </div>
+
+              <!-- Dimensions & Seed Row -->
+              <div class="sliders-grid">
+                <div class="control-box">
+                  <label class="control-label">DIMENSIONES</label>
+                  <div class="dim-pills">
+                    <button type="button" class="dim-pill active" data-w="512" data-h="512">512x512</button>
+                    <button type="button" class="dim-pill" data-w="768" data-h="768">768x768</button>
+                    <button type="button" class="dim-pill" data-w="1024" data-h="1024">1024x1024</button>
+                  </div>
+                </div>
+
+                <div class="control-box">
+                  <div class="slider-header">
+                    <label class="control-label">SEMILLA (SEED)</label>
+                    <button type="button" class="btn-text-link" id="random-seed-btn">🎲 ALEATORIA</button>
+                  </div>
+                  <input type="number" id="seed-input" class="cyber-input" placeholder="Aleatorio (-1)" />
+                </div>
+              </div>
+
+              <!-- Execute Button -->
+              <button type="submit" class="cyber-btn cyber-btn-generate" id="generate-btn">
+                <span class="gen-glyph">⚡</span>
+                <span class="gen-text">GENERAR MULTIMEDIA</span>
+                <span class="btn-arrow">▶</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- RIGHT COLUMN: MULTIMEDIA CANVAS & PROGRESS -->
+          <div class="studio-canvas-pane">
+            <!-- Real-Time Generation Progress Bar -->
+            <div class="generation-progress-box" id="gen-progress-container" style="display: none;">
+              <div class="progress-meta">
+                <span class="prog-status" id="prog-status-text">GENERANDO INFERENCIA...</span>
+                <span class="prog-percentage" id="prog-percent-text">0%</span>
+              </div>
+              <div class="cyber-progress-track">
+                <div class="cyber-progress-fill" id="gen-progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Canvas Viewport Frame -->
+            <div class="canvas-viewport" id="canvas-viewport">
+              <div class="viewport-corners">
+                <span class="corner tl"></span>
+                <span class="corner tr"></span>
+                <span class="corner bl"></span>
+                <span class="corner br"></span>
+              </div>
+
+              <!-- Empty Placeholder State -->
+              <div class="canvas-empty-state" id="canvas-empty">
+                <div class="empty-icon">❖</div>
+                <div class="empty-title">CANVAS MULTIMEDIA EN ESPERA</div>
+                <div class="empty-desc">Configura los parámetros o elige un preset para inicializar la generación por difusión local.</div>
+              </div>
+
+              <!-- Rendered Image -->
+              <img id="rendered-image" class="canvas-rendered-image" src="" alt="Resultado de Difusión" style="display: none;" />
+            </div>
+
+            <!-- Canvas Footer & Metadata Inspector -->
+            <div class="canvas-meta-bar" id="canvas-meta-bar" style="display: none;">
+              <div class="meta-items">
+                <span class="meta-item" id="meta-arch" style="color: var(--neon-amber);">ARCH: --</span>
+                <span class="meta-item" id="meta-time">TIEMPO: -- ms</span>
+                <span class="meta-item" id="meta-seed">SEED: --</span>
+                <span class="meta-item" id="meta-vram">VRAM: -- MB</span>
+              </div>
+              <div class="meta-actions">
+                <a id="download-img-btn" class="cyber-btn cyber-btn-mini" download="cyber_diffusion.png" href="#">
+                  <span>DESCARGAR</span>
+                  <span>↓</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 2: CHAT LLM (CONSOLA NEURAL) -->
+      <!-- ================================================================= -->
+      <main class="view-container" id="view-chat">
+        <div class="cyber-body">
+          <!-- Sidebar -->
+          <aside class="cyber-sidebar">
+            <div class="sidebar-section">
+              <div class="section-title"><span class="title-decor">//</span> MODEL MATRIX</div>
+              <div class="model-card active-model">
+                <div class="model-badge">ACTIVE ENGINE</div>
+                <div class="model-name">LLAMA-3.3-70B</div>
+                <div class="model-meta">LOCAL LLM // VRAM</div>
+              </div>
+            </div>
+
+            <div class="sidebar-section flex-grow">
+              <div class="section-header-row">
+                <div class="section-title"><span class="title-decor">//</span> CANALES</div>
+              </div>
+              <div class="channels-list">
+                <div class="channel-item active">
+                  <span class="channel-indicator">▶</span>
+                  <div class="channel-info">
+                    <div class="channel-name">01_ARCH_NETRUNNER</div>
+                    <div class="channel-desc">Consultas & Análisis</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Chat Matrix Feed -->
+          <div class="cyber-main">
+            <div class="chat-matrix-feed" id="chat-feed">
+              <div class="message-wrapper system-msg">
+                <div class="system-msg-content">
+                  <span class="neon-glyph">⚡</span>
+                  <span>[SISTEMA CONECTADO]: Enlace neuronal listo para responder consultas en modo Chat.</span>
+                </div>
+              </div>
+            </div>
+
+            <footer class="cyber-dock">
+              <form id="prompt-form" class="prompt-input-container">
+                <div class="prompt-frame">
+                  <span class="prompt-prefix">QUERY &gt;</span>
+                  <textarea
+                    id="prompt-textarea"
+                    rows="1"
+                    placeholder="Escribe una instrucción al LLM... (Enter para enviar)"
+                  ></textarea>
+                  <button type="submit" class="cyber-btn cyber-btn-send">
+                    <span>ENVIAR</span>
+                    <span class="send-glyph">⚡</span>
+                  </button>
+                </div>
+              </form>
+            </footer>
+          </div>
+        </div>
+      </main>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 3: API CONTROL & DIAGNOSTICS -->
+      <!-- ================================================================= -->
+      <main class="view-container" id="view-api-control">
+        <div class="api-control-layout">
+          <div class="api-control-header">
+            <div class="panel-title-cluster">
+              <span class="neon-glyph">⚙</span>
+              <span class="panel-title">PANEL DE CONTROL &amp; DIAGNÓSTICO DEL API</span>
+            </div>
+            <div class="api-status-badge">ESTADO: FASTAPI 0.2.0 ONLINE</div>
+          </div>
+
+          <!-- Active Ports Grid -->
+          <div class="api-section">
+            <div class="section-title"><span class="title-decor">//</span> PUERTOS ACTIVOS DEL SISTEMA</div>
+            <div class="ports-grid" id="ports-container">
+              <div class="port-card">
+                <div class="port-number">8000</div>
+                <div class="port-details">
+                  <div class="port-service">FastAPI Core &amp; WebSockets</div>
+                  <div class="port-desc">Inferencia de difusión, endpoints REST y stream de telemetría &lt;100ms</div>
+                </div>
+                <span class="channel-badge">ONLINE</span>
+              </div>
+              <div class="port-card">
+                <div class="port-number">1420</div>
+                <div class="port-details">
+                  <div class="port-service">Tauri v2 Desktop App</div>
+                  <div class="port-desc">Interfaz nativa Cyberpunk y puente IPC WebView2</div>
+                </div>
+                <span class="channel-badge">ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Registered Endpoints -->
+          <div class="api-section">
+            <div class="section-title"><span class="title-decor">//</span> ENDPOINTS REGISTRADOS</div>
+            <div class="endpoints-table-container">
+              <table class="cyber-table" id="endpoints-table">
+                <thead>
+                  <tr>
+                    <th>MÉTODO</th>
+                    <th>RUTA</th>
+                    <th>DESCRIPCIÓN</th>
+                  </tr>
+                </thead>
+                <tbody id="endpoints-tbody">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Live Request & Response Logs -->
+          <div class="api-section flex-grow">
+            <div class="section-header-row">
+              <div class="section-title"><span class="title-decor">//</span> REGISTRO EN TIEMPO REAL DE SOLICITUDES Y CÓDIGOS HTTP</div>
+              <button class="cyber-btn cyber-btn-mini" id="refresh-logs-btn">RECARGAR LOGS</button>
+            </div>
+            <div class="logs-terminal" id="logs-terminal">
+              <div class="log-line header-line">
+                <span>TIMESTAMP</span>
+                <span>MÉTODO</span>
+                <span>ENDPOINT</span>
+                <span>CÓDIGO HTTP</span>
+                <span>DURACIÓN</span>
+                <span>CLIENTE</span>
+              </div>
+              <div id="logs-entries">
+                <!-- Log rows injected dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MODAL: CONFIGURACIÓN Y ESCANEO DE MODELOS -->
+    <!-- ================================================================= -->
+    <div class="cyber-modal-overlay" id="modal-model-config" style="display: none;">
+      <div class="cyber-modal-card">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span class="neon-glyph">◈</span> CONFIGURACIÓN DEL MOTOR DE DIFUSIÓN
+          </div>
+          <button class="modal-close-btn" id="modal-close-btn">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Step 1: Directory Scanner -->
+          <div class="modal-group">
+            <label class="modal-label">1. UBICACIÓN DE MODELOS EN DISCO</label>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="scan-path-input"
+                class="cyber-input"
+                placeholder="Ruta local (ej. E:/Modelos/Diffusion o models/)"
+                value="models"
+              />
+              <button type="button" class="cyber-btn" id="browse-folder-btn" title="Abrir Explorador de Archivos de Windows">
+                <span>📁 EXAMINAR...</span>
+              </button>
+              <button type="button" class="cyber-btn cyber-btn-primary" id="start-scan-btn">
+                <span>ESCANEAR CARPETA</span>
+              </button>
+            </div>
+            <p class="modal-hint">
+              Detecta automáticamente subcarpetas con modelos Diffusers, archivos .safetensors y componentes auxiliares.
+            </p>
+          </div>
+
+          <!-- Step 2: Dynamic Model Selector -->
+          <div class="modal-group">
+            <label class="modal-label">2. SELECCIONAR MODELO BASE DETECTADO</label>
+            <select id="model-select-dropdown" class="cyber-select">
+              <optgroup label="Modelos Públicos Verificados" id="optgroup-public">
+                <option value="runwayml/stable-diffusion-v1-5" data-arch="SD 1.5">Stable Diffusion v1.5 [SD 1.5]</option>
+                <option value="stabilityai/sd-turbo" data-arch="SD 2.1 Adversarial">SD-Turbo [SD 2.1 Fast]</option>
+                <option value="segmind/SSD-1B" data-arch="SDXL-Distill">SSD-1B [SDXL Compacto 1024x1024]</option>
+                <option value="circlestone-labs/Anima-Base-v1.0-Diffusers" data-arch="Anima DiT">Anima Base v1.0 [DiT 2B Anime Modular]</option>
+              </optgroup>
+              <optgroup label="Modelos Locales Detectados" id="optgroup-local">
+                <option disabled>Ejecuta un escaneo para detectar modelos locales...</option>
+              </optgroup>
+            </select>
+            <div id="modal-arch-info" class="modal-arch-info-box" style="margin-top: 8px; padding: 8px 12px; background: rgba(10, 15, 29, 0.7); border: 1px solid var(--border-subtle); clip-path: var(--cyber-cut-sm); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span class="cyber-tag" id="modal-arch-badge" style="color: var(--neon-primary); border-color: var(--neon-primary);">SD 1.5</span>
+                <span id="modal-arch-desc" style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">Modelo clásico 512x512</span>
+              </div>
+              <span id="modal-arch-dims" style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-accent);">512x512 | CFG: 7.5</span>
+            </div>
+          </div>
+
+          <!-- Step 3: Auxiliaries (LoRA & Scheduler) -->
+          <div class="modal-group">
+            <label class="modal-label">3. COMPONENTES AUXILIARES (LoRA &amp; SCHEDULER)</label>
+            <div class="aux-row">
+              <div class="aux-col">
+                <label class="sub-label">ADAPTADOR LoRA:</label>
+                <select id="lora-select-dropdown" class="cyber-select">
+                  <option value="">Ninguno</option>
+                </select>
+              </div>
+              <div class="aux-col">
+                <label class="sub-label">PESO DEL LoRA (ESCALA):</label>
+                <input type="range" id="lora-weight-slider" min="0.0" max="2.0" step="0.1" value="1.0" class="cyber-range" />
+                <span class="range-indicator" id="lora-weight-val">1.0</span>
+              </div>
+              <div class="aux-col">
+                <label class="sub-label">PLANIFICADOR (SCHEDULER):</label>
+                <select id="scheduler-select-dropdown" class="cyber-select">
+                  <option value="EulerA">Euler Ancestral (EulerA)</option>
+                  <option value="DPM++">DPM++ 2M Karras</option>
+                  <option value="DDIM">DDIM</option>
+                  <option value="UniPC">UniPC Fast</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Dynamic Hardware & Memory Mode Policy -->
+          <div class="modal-group">
+            <label class="modal-label">4. POLÍTICA DE MEMORIA (VRAM vs. RAM DEL SISTEMA)</label>
+            <div class="memory-cards-grid">
+              <label class="memory-card">
+                <input type="radio" name="memory_mode" value="ahorro" />
+                <div class="card-content">
+                  <div class="card-badge green">🛡️ MODO AHORRO</div>
+                  <div class="card-vram-limit" id="limit-ahorro">&lt;= 40% VRAM (~2.4 GB)</div>
+                  <div class="card-desc">
+                    Sequential CPU Offload. Descomprime capa por capa en VRAM y usa memoria RAM adicional. Máxima tolerancia para modelos pesados sin OOM.
+                  </div>
+                </div>
+              </label>
+
+              <label class="memory-card active">
+                <input type="radio" name="memory_mode" value="equilibrado" checked />
+                <div class="card-content">
+                  <div class="card-badge yellow">⚡ MODO EQUILIBRADO (RECOMENDADO)</div>
+                  <div class="card-vram-limit" id="limit-equilibrado">&lt;= 65% VRAM (~4.0 GB)</div>
+                  <div class="card-desc">
+                    Model CPU Offload. Mantiene UNet en VRAM y Text Encoder / VAE en RAM. Excelente balance entre velocidad y consumo seguro de memoria.
+                  </div>
+                </div>
+              </label>
+
+              <label class="memory-card">
+                <input type="radio" name="memory_mode" value="alto_rendimiento" />
+                <div class="card-content">
+                  <div class="card-badge cyan">🚀 ALTO RENDIMIENTO</div>
+                  <div class="card-vram-limit" id="limit-alto">HASTA 100% VRAM (6.1 GB)</div>
+                  <div class="card-desc">
+                    Carga completa en memoria VRAM de la GPU. Velocidad de inferencia máxima sin descargas intermedias a RAM.
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Step 5: Transfer Format Preference -->
+          <div class="modal-group">
+            <label class="modal-label">5. FORMATO DE TRANSFERENCIA DE IMAGEN</label>
+            <div class="transfer-cards-grid">
+              <label class="transfer-card active">
+                <input type="radio" name="transfer_mode" value="base64" checked />
+                <div class="card-content">
+                  <div class="card-title">⚡ BASE64 EN MEMORIA (INSTANTÁNEO)</div>
+                  <div class="card-desc">
+                    Transfiere la imagen codificada directamente en la respuesta JSON. Renderizado inmediato en el canvas sin escribir archivos temporales en el disco duro.
+                  </div>
+                </div>
+              </label>
+
+              <label class="transfer-card">
+                <input type="radio" name="transfer_mode" value="disk" />
+                <div class="card-content">
+                  <div class="card-title">💾 GUARDADO EN DISCO + STREAMING URL</div>
+                  <div class="card-desc">
+                    Guarda automáticamente cada imagen generada en la carpeta <code>outputs/</code> en formato PNG sin compresión y la sirve a través de URL estática para archivo permanente.
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="cyber-btn" id="modal-cancel-btn">CANCELAR</button>
+          <button type="button" class="cyber-btn cyber-btn-primary" id="modal-apply-btn">
+            <span>INICIALIZAR MOTOR Y CARGAR MODELO</span>
+            <span class="btn-arrow">▶</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

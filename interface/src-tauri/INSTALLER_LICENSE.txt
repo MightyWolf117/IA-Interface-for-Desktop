@@ -1,0 +1,66 @@
+================================================================================
+⚡ CYBER-IA // ACUERDO DE LICENCIA Y POLÍTICAS DE USO OBLIGATORIAS
+   IA Interface for Desktop - Versión 1.0.0 Oficial
+================================================================================
+Copyright (C) 2026 MightyWolf117 y Colaboradores.
+Repositorio Oficial: https://github.com/MightyWolf117/IA-Interface-for-Desktop
+
+AL INSTALAR O UTILIZAR ESTE SOFTWARE, USTED ACEPTA DE FORMA EXPRESA, VINCULANTE
+E IRREVOCABLE LOS SIGUIENTES TÉRMINOS LEGALES, DE CÓDIGO ABIERTO Y DE SEGURIDAD:
+
+--------------------------------------------------------------------------------
+1. LICENCIA DE CÓDIGO ABIERTO Y COPYLEFT ESTRICTO (GNU GPLv3)
+--------------------------------------------------------------------------------
+Este software está distribuido bajo la licencia libre y de código abierto:
+GNU GENERAL PUBLIC LICENSE, Versión 3 (GPL-3.0).
+
+- Reconocimiento de Propiedad Intelectual: El diseño arquitectónico, el código
+  fuente, el motor de adaptadores y la interfaz gráfica Cyberpunk HUD son propiedad
+  intelectual de MightyWolf117 y sus colaboradores.
+- Obligación Perpetua de Código Abierto (Copyleft): Cualquier modificación,
+  bifurcación (fork), adaptación o distribución de este software o sus derivados
+  DEBE ser publicada y distribuida bajo esta misma licencia GPL-3.0, garantizando
+  que el código fuente permanezca siempre libre, accesible y transparente. Queda
+  estrictamente prohibido privatizar este software o empaquetarlo como código cerrado.
+
+--------------------------------------------------------------------------------
+2. POLÍTICAS ÉTICAS Y DE SEGURIDAD OBLIGATORIAS (TOLERANCIA CERO)
+--------------------------------------------------------------------------------
+Para proteger la integridad legal y ética de la comunidad, el uso de CYBER-IA
+está sujeto a las siguientes prohibiciones absolutas:
+
+a) PROHIBICIÓN ABSOLUTA DE CONTENIDO SEXUAL DE MENORES (CSAM / CSAE):
+   Queda terminantemente prohibido utilizar este software para generar, procesar,
+   almacenar, distribuir o facilitar cualquier tipo de contenido sexual explícito,
+   desnudez o sugerente que involucre a menores de edad. Cualquier infracción
+   resultará en la revocación de la licencia y la notificación inmediata a las
+   autoridades policiales y judiciales pertinentes.
+
+b) PROHIBICIÓN DE ZOOFILIA Y ABUSO SEXUAL ANIMAL:
+   Queda terminantemente prohibido utilizar o adaptar este software para producir
+   o diseminar representaciones de actos sexuales o abusos que involucren animales,
+   en estricto apego a las leyes penales y estatutos internacionales contra la
+   zoofilia, bestialismo y el maltrato animal.
+
+c) PROHIBICIÓN DE DISCURSO DE ODIO Y DISCRIMINACIÓN:
+   Queda prohibido el empleo de la plataforma para promover actos de violencia,
+   acoso, hostigamiento o discriminación por motivos de raza, religión, etnia,
+   género, orientación sexual, discapacidad o condición de salud.
+
+d) PROHIBICIÓN DE MALWARE, SPYWARE Y AMENAZAS CIBERNÉTICAS:
+   El software no contiene ni permite la inyección de troyanos, keyloggers, miners
+   de criptomonedas o módulos espía. Queda prohibida la modificación de este
+   paquete para distribuir amenazas de seguridad informática.
+
+--------------------------------------------------------------------------------
+3. EXCLUSIÓN DE GARANTÍAS Y RESPONSABILIDAD
+--------------------------------------------------------------------------------
+EL PROGRAMA SE SUMINISTRA "TAL CUAL", SIN GARANTÍAS DE NINGÚN TIPO, EXPRESAS O
+IMPLÍCITAS. EN NINGÚN CASO EL AUTOR (MIGHTYWOLF117) O LOS COLABORADORES SERÁN
+RESPONSABLES DE DAÑOS O PERJUICIOS DIRECTOS O INDIRECTOS DERIVADOS DEL USO O MAL
+USO DE ESTE SOFTWARE. EL USUARIO ES EL ÚNICO Y EXCLUSIVO RESPONSABLE DE LOS
+MODELOS Y PROMPTS QUE DECIDA EJECUTAR EN SU EQUIPO LOCAL.
+
+SI NO ACEPTA ESTOS TÉRMINOS EN SU TOTALIDAD, DEBE CANCELAR LA INSTALACIÓN DE
+INMEDIATO Y NO UTILIZAR ESTE SOFTWARE.
+================================================================================

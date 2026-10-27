@@ -1,0 +1,213 @@
+/* ==========================================================================
+   CYBER-IA // MODEL CONFIGURATION & SCANNER MODAL
+   ========================================================================== */
+
+.cyber-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.cyber-modal-card {
+  width: 780px;
+  max-height: 90vh;
+  background: rgba(14, 19, 34, 0.98);
+  border: 1px solid var(--border-neon);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9), var(--neon-primary-glow);
+  clip-path: var(--cyber-cut-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeInMsg 0.25s ease;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-neon);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(9, 12, 21, 0.9);
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--neon-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.modal-close-btn:hover { color: var(--neon-pink); }
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-main);
+}
+
+.modal-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.input-with-button {
+  display: flex;
+  gap: 8px;
+}
+
+.aux-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.aux-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sub-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.range-indicator {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--neon-primary);
+  text-align: right;
+}
+
+/* Memory Cards Grid */
+.memory-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.memory-card {
+  position: relative;
+  background: rgba(9, 12, 21, 0.8);
+  border: 1px solid var(--border-subtle);
+  clip-path: var(--cyber-cut-sm);
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.memory-card input[type="radio"] {
+  display: none;
+}
+
+.memory-card:has(input:checked) {
+  border-color: var(--neon-primary);
+  background: rgba(var(--neon-primary-rgb), 0.12);
+  box-shadow: var(--neon-primary-glow);
+}
+
+.card-badge {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.card-badge.green { color: var(--neon-green); }
+.card-badge.yellow { color: var(--neon-amber); }
+.card-badge.cyan { color: var(--neon-primary); }
+
+.card-vram-limit {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #fff;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.card-desc {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* Transfer Format Cards */
+.transfer-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.transfer-card {
+  position: relative;
+  background: rgba(9, 12, 21, 0.8);
+  border: 1px solid var(--border-subtle);
+  clip-path: var(--cyber-cut-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.transfer-card input[type="radio"] {
+  display: none;
+}
+
+.transfer-card:has(input:checked) {
+  border-color: var(--neon-primary);
+  background: rgba(var(--neon-primary-rgb), 0.12);
+  box-shadow: var(--neon-primary-glow);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-neon);
+  background: rgba(9, 12, 21, 0.9);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
