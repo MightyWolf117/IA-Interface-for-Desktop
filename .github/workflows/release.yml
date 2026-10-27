@@ -80,7 +80,7 @@ jobs:
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\cyber-ia.iss
 
-      - name: 🗜️ Empaquetar Versión Portable ZIP
+      - name: 🗜️ Empaquetar Versión Portable (.7z Ultra)
         run: |
           New-Item -ItemType Directory -Force -Path "staging-portable"
           New-Item -ItemType Directory -Force -Path "release-artifacts"
@@ -89,7 +89,18 @@ jobs:
           Copy-Item -Path "interface\src-tauri\INSTALLER_LICENSE.txt" -Destination "staging-portable\"
           Copy-Item -Path "README.md" -Destination "staging-portable\"
           Copy-Item -Path "LICENSE" -Destination "staging-portable\"
-          7z a -tzip release-artifacts\CYBER-IA-v1.0.0-Windows-x64-Portable.zip .\staging-portable\*
+          7z a -t7z -m0=lzma2 -mx=9 -ms=on release-artifacts\CYBER-IA-v1.0.0-Windows-x64-Portable.7z .\staging-portable\*
+
+          # Auditoría de tamaños para verificar cumplimiento de límites de GitHub Releases (< 2 GiB)
+          Get-ChildItem -Path "installer\output", "release-artifacts" -File | ForEach-Object {
+            $sizeMB = [math]::Round($_.Length / 1MB, 2)
+            $sizeGB = [math]::Round($_.Length / 1GB, 3)
+            Write-Host "📦 Artefacto generado: $($_.Name) - $sizeMB MB ($sizeGB GB)"
+            if ($_.Length -ge 2147483648) {
+              Write-Error "ERROR: El archivo $($_.Name) excede el límite de 2 GiB de GitHub Releases ($($_.Length) bytes)"
+              exit 1
+            }
+          }
 
       - name: 📤 Subir Instaladores como Artefactos de la Ejecución (Artifacts)
         if: always()
@@ -98,7 +109,7 @@ jobs:
           name: CYBER-IA-Windows-Release
           path: |
             installer/output/*.exe
-            release-artifacts/*.zip
+            release-artifacts/*.7z
           if-no-files-found: warn
 
       - name: 🚀 Publicar Release en GitHub
@@ -117,12 +128,12 @@ jobs:
             ### 🌟 Características de esta versión:
             - **Ejecución 100% Autónoma**: No requiere instalar Python, Git, Node.js ni Rust en el equipo del usuario.
             - **Backend FastAPI Integrado**: Empaquetado como dependencia nativa subordinada gestionada por Rust con arranque y apagado automático en segundo plano.
-            - **Instalador Oficial Inno Setup 6**: Instalador asistido `.exe` de 64 bits con compresión LZMA2-Ultra (soporta paquetes mayores a 2 GB), estética Cyberpunk HUD y aceptación obligatoria de licencias y políticas de uso.
-            - **Edición Portable (.zip)**: Versión descomprimible sin instalación previa.
+            - **Instalador Oficial Inno Setup 6**: Instalador asistido `.exe` de 64 bits con compresión LZMA2-Ultra, estética Cyberpunk HUD y aceptación obligatoria de licencias y políticas de uso.
+            - **Edición Portable (.7z)**: Versión de alta compresión LZMA2 para extracción y uso directo sin instalación.
             
             Consulte [RELEASE_NOTES.md](RELEASE_NOTES.md) y [CHANGELOG.md](CHANGELOG.md) para más detalles técnicos.
           files: |
             installer/output/*.exe
-            release-artifacts/*.zip
+            release-artifacts/*.7z
           draft: ${{ github.event.inputs.draft || false }}
           prerelease: ${{ github.event.inputs.prerelease || false }}
