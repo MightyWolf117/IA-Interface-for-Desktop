@@ -120,9 +120,8 @@ Below are genuine screenshots demonstrating CYBER-IA executing in a live desktop
 For users who want to run **CYBER-IA** directly without configuring development toolchains:
 
 1. Navigate to the official **[GitHub Releases Page](https://github.com/MightyWolf117/IA-Interface-for-Desktop/releases)**.
-2. Download the pre-packaged installer for Windows (10/11 64-bit):
-   - **Interactive Setup**: `CYBER-IA-Setup.exe` (NSIS)
-   - **Enterprise Package**: `CYBER-IA.msi` (Windows Installer)
+2. Download the official installer package for Windows (10/11 64-bit):
+   - **Official Installer**: `CYBER-IA-Setup.exe` (NSIS with Cyberpunk HUD theme and mandatory license acceptance)
 3. Run the installer and launch **CYBER-IA** directly from your Start Menu or Desktop.
 4. **All-in-One Autonomous Architecture**: The FastAPI inference engine and Tauri v2 desktop shell are compiled into a standalone package. Rust natively launches the backend in the background without pop-up windows and terminates all subprocesses cleanly on exit.
 

@@ -142,6 +142,9 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Fixed
 
+- **Corrección de Límite de Tamaño en Empaquetado Windows (Error WiX LGHT0001 / CAB 2GB Limit)**:
+  - Se diagnosticó el fallo catastrófico en `light.exe` (`error LGHT0001: CreateCabFinish 0x8000FFFF`), causado por la limitación estricta de 2 GB inherente al motor de compresión Microsoft Cabinet (.cab) de WiX 3 al intentar empaquetar distribuciones completas de PyTorch con CUDA.
+  - Se configuró el empaquetado de Windows centrado en **NSIS** (`targets: "nsis"` en [interface/src-tauri/tauri.conf.json](interface/src-tauri/tauri.conf.json)), el cual no está sujeto a límites de cabinet, compila de forma estable paquetes superiores a 2 GB e incorpora la interfaz gráfica personalizada Cyberpunk HUD con pantalla obligatoria de aceptación de licencias.
 - **Resolución de Dependencias en GitHub Actions y Compatibilidad de NumPy**:
   - Se corrigió el fallo de compilación en el runner de GitHub Actions donde `numpy==2.5.2` requería estrictamente Python >= 3.12 mientras el workflow corría sobre 3.11.
   - Se actualizó el entorno de compilación en [.github/workflows/release.yml](.github/workflows/release.yml) y [.github/workflows/ci.yml](.github/workflows/ci.yml) a Python 3.12 nativo.

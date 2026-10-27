@@ -120,9 +120,8 @@ A continuación se muestran capturas reales de la aplicación durante su ejecuci
 Para usuarios que desean utilizar **CYBER-IA** directamente sin configurar entornos de programación:
 
 1. Dirígete a la sección de **[Releases Oficiales en GitHub](https://github.com/MightyWolf117/IA-Interface-for-Desktop/releases)**.
-2. Descarga el paquete de instalación para tu sistema (Windows 10/11 64-bit):
-   - **Instalador Asistido**: `CYBER-IA-Setup.exe` (NSIS)
-   - **Paquete de Instalación Windows**: `CYBER-IA.msi` (WiX)
+2. Descarga el paquete de instalación oficial para tu sistema (Windows 10/11 64-bit):
+   - **Instalador Oficial**: `CYBER-IA-Setup.exe` (NSIS con interfaz Cyberpunk HUD y aceptación obligatoria de licencias)
 3. Ejecuta el instalador y abre la aplicación desde tu Menú Inicio o Escritorio.
 4. **Arquitectura Autónoma**: La API FastAPI y la interfaz gráfica vienen precompiladas. El núcleo nativo en Rust gestiona el arranque del servicio de IA de forma 100% invisible en segundo plano y finaliza todos los subprocesos de forma limpia al cerrar la ventana.
 

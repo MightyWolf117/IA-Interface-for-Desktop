@@ -83,7 +83,7 @@ jobs:
             ### 🌟 Características de esta versión:
             - **Ejecución 100% Autónoma**: No requiere instalar Python, Git, Node.js ni Rust en el equipo del usuario.
             - **Backend FastAPI Integrado**: Empaquetado como dependencia nativa gestionada por Rust con arranque y apagado automático en segundo plano.
-            - **Instaladores incluidos**: Instalador asistido `.exe` (NSIS) y paquete de instalación empresarial `.msi` (WiX).
+            - **Instalador Oficial**: Instalador asistido `.exe` (NSIS) con estética Cyberpunk HUD y aceptación obligatoria de licencias.
             
             Consulte [RELEASE_NOTES.md](RELEASE_NOTES.md) y [CHANGELOG.md](CHANGELOG.md) para más detalles técnicos.
           releaseDraft: ${{ github.event.inputs.draft || false }}
@@ -93,8 +93,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: CYBER-IA-Windows-Installers
-          path: |
-            interface/src-tauri/target/release/bundle/nsis/*.exe
-            interface/src-tauri/target/release/bundle/msi/*.msi
+          name: CYBER-IA-Windows-Installer
+          path: interface/src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: warn

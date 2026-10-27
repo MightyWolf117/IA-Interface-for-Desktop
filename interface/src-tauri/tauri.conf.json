@@ -24,7 +24,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": "nsis",
     "publisher": "MightyWolf117",
     "copyright": "Copyright (C) 2026 MightyWolf117 and Contributors",
     "license": "GPL-3.0",
@@ -46,10 +46,6 @@
         "sidebarImage": "icons/nsis_sidebar.bmp",
         "installerIcon": "icons/icon.ico",
         "installMode": "currentUser"
-      },
-      "wix": {
-        "bannerPath": "icons/wix_banner.bmp",
-        "dialogImagePath": "icons/wix_dialog.bmp"
       }
     }
   }
