@@ -142,6 +142,13 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### Fixed
 
+- **Corrección de `PermissionError: [WinError 5] Acceso denegado` en Instalaciones de Program Files**:
+  - **Causa Raíz Identificada**: Al instalar la aplicación en directorios protegidos del sistema (`C:\Program Files` o `E:\Program Files`), los procesos de usuario estándar carecen de permisos de escritura administrativa sobre la carpeta de instalación. Al arrancar `main.py` y crear el directorio estático `outputs/` relativo al ejecutable (`resources/api/_internal/outputs`), Windows bloqueaba la operación provocando un colapso en el arranque con `PermissionError: [WinError 5] Acceso denegado`.
+  - **Módulo Centralizado de Rutas Seguras ([paths.py](backend/app/core/paths.py))**: Se implementó la función `get_outputs_dir()` con resolución inteligente:
+    - En modo empaquetado/congelado (o si la carpeta local no es escribible), redirige automáticamente la creación y montaje estático de las imágenes generadas a la carpeta personal de Imágenes del usuario (`%USERPROFILE%\Pictures\CYBER-IA` con respaldo en `%LOCALAPPDATA%\CYBER-IA\outputs`), garantizando permisos de lectura/escritura completos sin requerir privilegios de Administrador.
+    - Los usuarios ahora pueden acceder de forma inmediata y natural a sus creaciones directamente desde su carpeta de Imágenes de Windows sin navegar por subdirectorios ocultos de la aplicación.
+    - Se actualizó el montaje estático de FastAPI en [main.py](backend/app/main.py) y el guardado en disco en [diffusion_engine.py](backend/app/services/diffusion_engine.py).
+
 - **Corrección Definitiva de Límite de Tamaño en Instaladores Windows (Error 2GB en WiX y NSIS / Error mmapping file #12345)**:
   - **Diagnóstico Integral**: Tanto WiX 3 (`light.exe : error LGHT0001 : Catastrophic failure CreateCabFinish`) como NSIS estándar de 32 bits (`makensis.exe : Internal compiler error #12345: error mmapping file is out of range`) poseen límites arquitectónicos estrictos e insuperables de 2.0 GB (`2,147,483,647 bytes`) al empaquetar archivos dentro de un único instalador, colapsando ante la distribución completa de PyTorch CUDA (~2.8 GB).
   - **Transición a Inno Setup 6 (64-bit)**: Se desacopló la fase de empaquetado del comando interno de Tauri (`tauri build --no-bundle`) y se implementó un compilador dedicado con Inno Setup 6 en [installer/cyber-ia.iss](installer/cyber-ia.iss). Inno Setup 6 soporta nativamente arquitecturas de 64 bits sin límite de tamaño de archivo, implementa compresión LZMA2-Ultra (reduciendo significativamente el peso final) y garantiza:

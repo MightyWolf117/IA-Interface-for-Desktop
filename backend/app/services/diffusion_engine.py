@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, Callable, Type
 
 from app.core.hardware import HardwareDetector
+from app.core.paths import get_outputs_dir
 from app.services.architectures.base import BaseModelAdapter
 from app.services.architectures.registry import ArchitectureRegistry
 
@@ -45,7 +46,6 @@ class DiffusionEngine:
     _transfer_mode: str = "base64"
     _auxiliaries: Dict[str, Any] = {}
     _device: str = "cuda" if (DIFFUSERS_AVAILABLE and torch.cuda.is_available()) else "cpu"
-    _outputs_dir: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "outputs")
 
     @classmethod
     def get_status(cls) -> Dict[str, Any]:
@@ -252,9 +252,9 @@ class DiffusionEngine:
 
         # Format output: Base64 or Disk
         if cls._transfer_mode == "disk":
-            os.makedirs(cls._outputs_dir, exist_ok=True)
+            outputs_path = get_outputs_dir()
             filename = f"{gen_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.png"
-            file_path = os.path.join(cls._outputs_dir, filename)
+            file_path = os.path.join(outputs_path, filename)
             img.save(file_path, format="PNG")
             image_data = f"/outputs/{filename}"
         else:

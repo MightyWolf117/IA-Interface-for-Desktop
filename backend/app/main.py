@@ -37,9 +37,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.core.paths import get_outputs_dir
+
 # Ensure outputs directory exists and mount as static files for disk-transfer mode
-outputs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "outputs")
-os.makedirs(outputs_dir, exist_ok=True)
+outputs_dir = get_outputs_dir()
 app.mount("/outputs", StaticFiles(directory=outputs_dir), name="outputs")
 
 # Include Routers

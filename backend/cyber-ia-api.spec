@@ -44,6 +44,7 @@ hidden_imports = [
     'app.core',
     'app.core.hardware',
     'app.core.api_tracker',
+    'app.core.paths',
     'app.schemas',
     'app.schemas.chat',
     'app.services',
