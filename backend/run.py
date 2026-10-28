@@ -79,6 +79,21 @@ is_frozen = getattr(sys, "frozen", False)
 
 if is_frozen:
     base_dir = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(sys.executable)))
+    # Register DLL search paths on Windows for PyTorch & CUDA C-extensions (Python 3.8+)
+    if sys.platform == "win32":
+        candidate_dll_dirs = [
+            base_dir,
+            os.path.join(base_dir, "_internal"),
+            os.path.join(base_dir, "torch", "lib"),
+            os.path.join(base_dir, "_internal", "torch", "lib"),
+        ]
+        for d in candidate_dll_dirs:
+            if os.path.isdir(d):
+                try:
+                    os.add_dll_directory(d)
+                except Exception:
+                    pass
+                os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
 else:
     base_dir = os.path.dirname(os.path.abspath(__file__))
     venv_dir = os.path.join(base_dir, ".venv")

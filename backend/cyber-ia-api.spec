@@ -7,7 +7,7 @@ bundled directly into Tauri v2 as a managed child process.
 
 import os
 import sys
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules
 
 block_cipher = None
 
@@ -60,11 +60,22 @@ hidden_imports = [
 ]
 
 datas = []
+binaries = []
+
+# Collect all lazy-loaded submodules, data assets, and binaries for AI inference engines
+for pkg in ['diffusers', 'transformers', 'accelerate', 'torch', 'safetensors', 'torchvision']:
+    try:
+        p_datas, p_binaries, p_hidden = collect_all(pkg)
+        datas += p_datas
+        binaries += p_binaries
+        hidden_imports += p_hidden
+    except Exception as e:
+        print(f"[SPEC] Aviso recolectando paquete {pkg}: {e}")
 
 a = Analysis(
     ['run.py'],
     pathex=['.'],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hidden_imports,
     hookspath=[],
@@ -95,7 +106,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,          # CRITICAL: UPX corrupts PyTorch / C10 DLLs on Windows!
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -110,7 +121,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,          # CRITICAL: UPX corrupts PyTorch / C10 DLLs on Windows!
     upx_exclude=[],
     name='cyber-ia-api',
 )

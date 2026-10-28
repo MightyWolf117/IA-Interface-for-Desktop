@@ -20,11 +20,27 @@ except ImportError:
     Image = None
     ImageDraw = None
 
+TORCH_AVAILABLE = False
+DIFFUSERS_AVAILABLE = False
+IMPORT_ERROR_DETAILS = []
+
 try:
     import torch
-    DIFFUSERS_AVAILABLE = True
-except ImportError:
-    DIFFUSERS_AVAILABLE = False
+    TORCH_AVAILABLE = True
+except Exception as e:
+    import traceback
+    err_msg = f"torch: {e}"
+    IMPORT_ERROR_DETAILS.append(err_msg)
+    print(f"[CYBER-IA DiffusionEngine] Fallo al cargar torch: {traceback.format_exc()}")
+
+try:
+    import diffusers
+    DIFFUSERS_AVAILABLE = TORCH_AVAILABLE
+except Exception as e:
+    import traceback
+    err_msg = f"diffusers: {e}"
+    IMPORT_ERROR_DETAILS.append(err_msg)
+    print(f"[CYBER-IA DiffusionEngine] Fallo al cargar diffusers: {traceback.format_exc()}")
 
 
 class DiffusionEngine:
@@ -135,7 +151,8 @@ class DiffusionEngine:
             "scheduler": scheduler
         }
 
-        if not DIFFUSERS_AVAILABLE:
+        if not DIFFUSERS_AVAILABLE or not TORCH_AVAILABLE:
+            detail = "; ".join(IMPORT_ERROR_DETAILS) if IMPORT_ERROR_DETAILS else "Módulos torch / diffusers no encontrados en el entorno empaquetado."
             return {
                 "success": False,
                 "model_id": model_id_or_path,
@@ -144,7 +161,7 @@ class DiffusionEngine:
                 "device": "NO_DIFFUSERS",
                 "vram_allocated_mb": 0.0,
                 "vram_reserved_mb": 0.0,
-                "message": "Error crítico: El paquete diffusers o torch no están disponibles en este entorno Python."
+                "message": f"Error crítico: El motor de difusión no está disponible en este entorno Python. Detalle: {detail}"
             }
 
         # 1. Determinar el adaptador de arquitectura óptimo

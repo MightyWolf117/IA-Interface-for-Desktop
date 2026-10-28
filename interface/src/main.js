@@ -2,6 +2,7 @@
 // CYBER-IA // MAIN MODULAR APP ORCHESTRATOR
 // ==========================================================================
 
+import { initDialogSystem } from "./js/dialog.js";
 import { initUI } from "./js/ui.js";
 import { initAlertsSystem } from "./js/alerts.js";
 import { initWebSocketTelemetry } from "./js/telemetry.js";
@@ -11,6 +12,9 @@ import { initChatLLM } from "./js/chat.js";
 import { initApiControlPanel } from "./js/api_control.js";
 
 window.addEventListener("DOMContentLoaded", () => {
+  // 0. Initialize Custom Cyberpunk HUD Dialog System (overrides window.alert/confirm/prompt)
+  initDialogSystem();
+
   // 1. Initialize UI elements (Clock, Themes, Tabs, Scanlines)
   initUI();
 

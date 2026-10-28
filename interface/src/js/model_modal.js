@@ -3,6 +3,7 @@
 // ==========================================================================
 
 import { API_BASE } from "./config.js";
+import { cyberAlert } from "./dialog.js";
 
 // Cache local de modelos para acceso rápido a metadatos de arquitectura
 const modelsMetadataCache = new Map();
@@ -64,11 +65,11 @@ export function initModelConfigModal() {
             if (scanBtn) scanBtn.click();
           }
         } else {
-          alert("No se pudo abrir el explorador de carpetas de Windows.");
+          cyberAlert("No se pudo abrir el explorador de carpetas de Windows.", "EXPLORADOR DE CARPETAS", "error");
         }
       } catch (err) {
         console.warn("Fallo al invocar diálogo nativo:", err);
-        alert("Error al invocar diálogo de Windows: " + err);
+        cyberAlert("Error al invocar diálogo de Windows: " + err, "EXPLORADOR DE CARPETAS", "error");
       } finally {
         browseBtn.innerHTML = origText;
       }
@@ -131,7 +132,7 @@ export function initModelConfigModal() {
           }
         }
       } catch (err) {
-        alert("Error al escanear directorio: " + err);
+        cyberAlert("Error al escanear directorio:\n" + err, "ERROR DE ESCANEO", "error");
       } finally {
         scanBtn.textContent = "ESCANEAR CARPETA";
       }
@@ -149,7 +150,7 @@ export function initModelConfigModal() {
       const scheduler = schedulerDropdown?.value || "EulerA";
 
       if (!selectedModel) {
-        alert("Por favor selecciona un modelo.");
+        cyberAlert("Por favor selecciona un modelo antes de continuar.", "SELECCIÓN REQUERIDA", "warning");
         return;
       }
 
@@ -172,7 +173,7 @@ export function initModelConfigModal() {
         if (res.ok) {
           const resp = await res.json();
           if (!resp.success) {
-            alert("No se pudo cargar el modelo:\n" + (resp.message || "Error al inicializar pipeline."));
+            cyberAlert(resp.message || "Error al inicializar pipeline.", "FALLO AL CARGAR MODELO", "error");
             return;
           }
 
@@ -220,10 +221,10 @@ export function initModelConfigModal() {
           modal.style.display = "none";
         } else {
           const errData = await res.json().catch(() => ({ detail: "Error HTTP " + res.status }));
-          alert("Error cargando modelo: " + (errData.detail || "Error desconocido"));
+          cyberAlert("Error cargando modelo:\n" + (errData.detail || "Error desconocido"), "ERROR AL CARGAR MODELO", "error");
         }
       } catch (err) {
-        alert("Fallo de conexión al cargar modelo: " + err);
+        cyberAlert("Fallo de conexión al cargar modelo:\n" + err, "ERROR DE COMUNICACIÓN", "error");
       } finally {
         applyBtn.disabled = false;
         applyBtn.textContent = "INICIALIZAR MOTOR Y CARGAR MODELO";
@@ -243,7 +244,7 @@ export function initModelConfigModal() {
           if (archTag) archTag.textContent = "ARQUITECTURA: NINGUNA";
         }
       } catch (err) {
-        alert("Error al descargar modelo: " + err);
+        cyberAlert("Error al descargar modelo:\n" + err, "ERROR DE DESCARGA", "error");
       }
     });
   }

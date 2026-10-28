@@ -3,6 +3,7 @@
 // ==========================================================================
 
 import { API_BASE } from "./config.js";
+import { cyberAlert } from "./dialog.js";
 
 let currentWidth = 512;
 let currentHeight = 512;
@@ -121,11 +122,11 @@ export function initDiffusionStudio() {
             downloadBtn.href = data.image_data;
           }
         } else {
-          const err = await res.json();
-          alert("Error de inferencia: " + (err.detail || "Error desconocido"));
+          const err = await res.json().catch(() => ({ detail: "Error HTTP " + res.status }));
+          cyberAlert("Error durante la inferencia:\n" + (err.detail || "Error desconocido"), "FALLO DE GENERACIÓN", "error");
         }
       } catch (err) {
-        alert("Fallo al conectar con el motor de difusión: " + err);
+        cyberAlert("Fallo al comunicar con el motor de difusión:\n" + err, "ERROR DE DIFUSIÓN", "error");
       } finally {
         if (genBtn) {
           genBtn.disabled = false;

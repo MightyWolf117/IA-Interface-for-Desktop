@@ -3,6 +3,7 @@
 // ==========================================================================
 
 import { API_BASE } from "./config.js";
+import { cyberAlert } from "./dialog.js";
 
 let alertBannerEl = null;
 let alertMetricTagEl = null;
@@ -40,7 +41,7 @@ export function initAlertsSystem() {
           if (nameEl) nameEl.textContent = "VRAM PURGADA DE EMERGENCIA";
         }
       } catch (err) {
-        alert("Fallo al purgar VRAM: " + err);
+        cyberAlert("Fallo al purgar VRAM:\n" + err, "ALERTA DE MEMORIA", "error");
       } finally {
         purgeBtnEl.textContent = "PURGAR VRAM AHORA";
       }
@@ -72,7 +73,7 @@ export function initAlertsSystem() {
           if (memTag) memTag.textContent = "PERFIL: AHORRO (CPU OFFLOAD)";
         }
       } catch (err) {
-        alert("Fallo al aplicar modo Ahorro: " + err);
+        cyberAlert("Fallo al aplicar modo Ahorro:\n" + err, "MODO AHORRO", "error");
       } finally {
         offloadBtnEl.textContent = "ACTIVAR MODO AHORRO";
       }
