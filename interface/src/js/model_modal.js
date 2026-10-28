@@ -3,10 +3,11 @@
 // ==========================================================================
 
 import { API_BASE } from "./config.js";
-import { cyberAlert } from "./dialog.js";
+import { cyberAlert, cyberConfirm } from "./dialog.js";
 
 // Cache local de modelos para acceso rápido a metadatos de arquitectura
 const modelsMetadataCache = new Map();
+let publicModelCacheStatus = { present: false, size_mb: 0, path: "" };
 
 export function initModelConfigModal() {
   const modal = document.querySelector("#modal-model-config");
@@ -18,6 +19,13 @@ export function initModelConfigModal() {
   const unloadBtn = document.querySelector("#unload-model-btn");
 
   const scanPathInput = document.querySelector("#scan-path-input");
+  const downloadPathInput = document.querySelector("#download-path-input");
+  const browseDownloadBtn = document.querySelector("#browse-download-dir-btn");
+  const downloadDirStatus = document.querySelector("#download-dir-status");
+  const publicModelTools = document.querySelector("#public-model-tools");
+  const publicModelStatusTag = document.querySelector("#public-model-status-tag");
+  const deletePublicModelBtn = document.querySelector("#delete-public-model-btn");
+
   const modelDropdown = document.querySelector("#model-select-dropdown");
   const loraDropdown = document.querySelector("#lora-select-dropdown");
   const loraWeightSlider = document.querySelector("#lora-weight-slider");
@@ -32,7 +40,10 @@ export function initModelConfigModal() {
   initHardwareInfo();
 
   // Open / Close Modal
-  if (openBtn) openBtn.addEventListener("click", () => (modal.style.display = "flex"));
+  if (openBtn) openBtn.addEventListener("click", () => {
+    modal.style.display = "flex";
+    if (modelDropdown) checkPublicModelStatus(modelDropdown.value);
+  });
   if (closeBtn) closeBtn.addEventListener("click", () => (modal.style.display = "none"));
   if (cancelBtn) cancelBtn.addEventListener("click", () => (modal.style.display = "none"));
 
@@ -43,10 +54,137 @@ export function initModelConfigModal() {
     });
   }
 
-  // Actualizar tarjeta de arquitectura al cambiar el modelo en el dropdown
+  async function checkPublicModelStatus(modelId) {
+    if (!modelId || !modelId.includes("/")) {
+      if (publicModelTools) publicModelTools.style.display = "none";
+      if (deletePublicModelBtn) deletePublicModelBtn.style.display = "none";
+      return;
+    }
+
+    if (publicModelTools) publicModelTools.style.display = "flex";
+    if (publicModelStatusTag) {
+      publicModelStatusTag.textContent = "VERIFICANDO DISCO...";
+      publicModelStatusTag.style.color = "var(--text-muted)";
+      publicModelStatusTag.style.borderColor = "var(--border-subtle)";
+    }
+
+    const downloadDir = downloadPathInput?.value.trim() || scanPathInput?.value.trim() || "models";
+    try {
+      const res = await fetch(`${API_BASE}/models/check-public`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_id: modelId, download_dir: downloadDir })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        publicModelCacheStatus = data;
+        if (data.present) {
+          if (publicModelStatusTag) {
+            publicModelStatusTag.textContent = `✅ EN DISCO (${data.size_mb} MB)`;
+            publicModelStatusTag.style.color = "var(--neon-green)";
+            publicModelStatusTag.style.borderColor = "rgba(0, 255, 117, 0.5)";
+          }
+          if (deletePublicModelBtn) {
+            deletePublicModelBtn.style.display = "inline-flex";
+            deletePublicModelBtn.dataset.modelId = modelId;
+            deletePublicModelBtn.dataset.downloadDir = downloadDir;
+          }
+        } else {
+          if (publicModelStatusTag) {
+            publicModelStatusTag.textContent = "📥 NO DESCARGADO (~2 a 4 GB)";
+            publicModelStatusTag.style.color = "var(--neon-amber)";
+            publicModelStatusTag.style.borderColor = "rgba(255, 183, 0, 0.5)";
+          }
+          if (deletePublicModelBtn) deletePublicModelBtn.style.display = "none";
+        }
+      }
+    } catch (e) {
+      console.warn("Fallo verificando estado de modelo público:", e);
+    }
+  }
+
+  // Sincronizar carpeta de descarga con escaneo a menos que el usuario la personalice
+  if (scanPathInput && downloadPathInput) {
+    scanPathInput.addEventListener("input", () => {
+      if (!downloadPathInput.dataset.custom) {
+        downloadPathInput.value = scanPathInput.value;
+      }
+      if (modelDropdown) checkPublicModelStatus(modelDropdown.value);
+    });
+  }
+
+  if (browseDownloadBtn) {
+    browseDownloadBtn.addEventListener("click", async () => {
+      const origText = browseDownloadBtn.innerHTML;
+      browseDownloadBtn.innerHTML = "<span>ABRIENDO...</span>";
+      try {
+        const res = await fetch(`${API_BASE}/system/browse-folder`, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.selected_path && downloadPathInput) {
+            downloadPathInput.value = data.selected_path;
+            downloadPathInput.dataset.custom = "true";
+            if (downloadDirStatus) {
+              downloadDirStatus.textContent = "PERSONALIZADA";
+              downloadDirStatus.style.color = "var(--neon-pink)";
+              downloadDirStatus.style.borderColor = "var(--neon-pink)";
+            }
+            if (modelDropdown) checkPublicModelStatus(modelDropdown.value);
+          }
+        }
+      } catch (err) {
+        console.warn("Fallo al invocar diálogo de carpeta de descargas:", err);
+      } finally {
+        browseDownloadBtn.innerHTML = origText;
+      }
+    });
+  }
+
+  if (deletePublicModelBtn) {
+    deletePublicModelBtn.addEventListener("click", async () => {
+      const modelId = deletePublicModelBtn.dataset.modelId;
+      const downloadDir = deletePublicModelBtn.dataset.downloadDir;
+      if (!modelId || !downloadDir) return;
+
+      const safeFolder = modelId.replace("/", "--");
+      const confirmed = await cyberConfirm(
+        `¿Deseas eliminar la versión descargada de este modelo?\n\nModelo: ${modelId}\nCarpeta: ${downloadDir}\\${safeFolder}\n\nEsta acción liberará espacio en tu disco de forma permanente.`,
+        "CONFIRMAR ELIMINACIÓN",
+        "warning"
+      );
+
+      if (confirmed) {
+        deletePublicModelBtn.disabled = true;
+        deletePublicModelBtn.textContent = "ELIMINANDO...";
+        try {
+          const res = await fetch(`${API_BASE}/models/delete-public`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ model_id: modelId, download_dir: downloadDir })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            cyberAlert(data.message, "MODELO ELIMINADO", "success");
+            checkPublicModelStatus(modelId);
+            if (scanBtn) scanBtn.click();
+          } else {
+            cyberAlert("Error al eliminar la carpeta del modelo.", "ERROR DE BORRADO", "error");
+          }
+        } catch (err) {
+          cyberAlert("Error de comunicación: " + err, "ERROR", "error");
+        } finally {
+          deletePublicModelBtn.disabled = false;
+          deletePublicModelBtn.innerHTML = "<span>🗑️ BORRAR VERSIÓN</span>";
+        }
+      }
+    });
+  }
+
+  // Actualizar tarjeta de arquitectura y estado de modelo al cambiar en el dropdown
   if (modelDropdown) {
     modelDropdown.addEventListener("change", () => {
       updateArchitecturePreview(modelDropdown.value);
+      checkPublicModelStatus(modelDropdown.value);
     });
   }
 
@@ -62,7 +200,11 @@ export function initModelConfigModal() {
           const data = await res.json();
           if (data.selected_path && scanPathInput) {
             scanPathInput.value = data.selected_path;
+            if (!downloadPathInput?.dataset.custom && downloadPathInput) {
+              downloadPathInput.value = data.selected_path;
+            }
             if (scanBtn) scanBtn.click();
+            if (modelDropdown) checkPublicModelStatus(modelDropdown.value);
           }
         } else {
           cyberAlert("No se pudo abrir el explorador de carpetas de Windows.", "EXPLORADOR DE CARPETAS", "error");
@@ -154,7 +296,24 @@ export function initModelConfigModal() {
         return;
       }
 
-      applyBtn.textContent = "INICIALIZANDO MOTOR...";
+      const downloadDir = downloadPathInput?.value.trim() || scanPathInput?.value.trim() || "models";
+
+      // Si es un modelo público no descargado en disco, pedir confirmación antes de iniciar descarga pesada
+      if (selectedModel.includes("/") && !publicModelCacheStatus.present) {
+        const safeFolder = selectedModel.replace("/", "--");
+        const confirmed = await cyberConfirm(
+          `El modelo público '${selectedModel}' no se encuentra en tu disco.\n\n¿Deseas descargarlo en:\n${downloadDir}\\${safeFolder}?\n\nSe descargará como una carpeta estándar para que puedas verla, usarla o borrarla cuando desees.`,
+          "DESCARGAR MODELO PÚBLICO",
+          "info"
+        );
+        if (!confirmed) {
+          return;
+        }
+        applyBtn.textContent = "DESCARGANDO MODELO A DISCO...";
+      } else {
+        applyBtn.textContent = "INICIALIZANDO MOTOR...";
+      }
+
       applyBtn.disabled = true;
       try {
         const res = await fetch(`${API_BASE}/diffusion/load`, {
@@ -166,7 +325,8 @@ export function initModelConfigModal() {
             transfer_mode: transMode,
             lora_path: loraPath,
             lora_weight: loraWeight,
-            scheduler: scheduler
+            scheduler: scheduler,
+            download_dir: downloadDir
           })
         });
 
@@ -176,6 +336,10 @@ export function initModelConfigModal() {
             cyberAlert(resp.message || "Error al inicializar pipeline.", "FALLO AL CARGAR MODELO", "error");
             return;
           }
+
+          // Actualizar estado de descarga del modelo
+          checkPublicModelStatus(selectedModel);
+          if (scanBtn) scanBtn.click();
 
           // Update Sub-HUD
           const nameEl = document.querySelector("#diff-model-name");

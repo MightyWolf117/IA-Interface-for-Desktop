@@ -71,12 +71,35 @@ class SD15Adapter(BaseModelAdapter):
         torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
         if os.path.isfile(model_path) and model_path.endswith((".safetensors", ".ckpt")):
-            pipe = StableDiffusionPipeline.from_single_file(
-                model_path,
-                torch_dtype=torch_dtype,
-                use_safetensors=True,
-                load_safety_checker=False
-            )
+            try:
+                pipe = StableDiffusionPipeline.from_single_file(
+                    model_path,
+                    torch_dtype=torch_dtype,
+                    use_safetensors=True,
+                    load_safety_checker=False
+                )
+            except Exception as e:
+                if "model_index.json" in str(e) or "EnvironmentError" in type(e).__name__:
+                    print(f"[SD15Adapter] Caché de configuración incompleta o corrupta ({e}). Reparando automáticamente...")
+                    try:
+                        from diffusers.loaders.single_file import _download_diffusers_model_config_from_hub
+                        _download_diffusers_model_config_from_hub(
+                            "stable-diffusion-v1-5/stable-diffusion-v1-5",
+                            cache_dir=None,
+                            revision=None,
+                            proxies=None,
+                            force_download=True
+                        )
+                    except Exception as dl_err:
+                        print(f"[SD15Adapter] Aviso descargando config: {dl_err}")
+                    pipe = StableDiffusionPipeline.from_single_file(
+                        model_path,
+                        torch_dtype=torch_dtype,
+                        use_safetensors=True,
+                        load_safety_checker=False
+                    )
+                else:
+                    raise
         else:
             load_kwargs = {"torch_dtype": torch_dtype, "safety_checker": None, "requires_safety_checker": False}
             pipe = StableDiffusionPipeline.from_pretrained(model_path, **load_kwargs)

@@ -48,6 +48,32 @@ class LoadModelRequest(BaseModel):
     lora_path: Optional[str] = Field(default=None, description="Ruta opcional a archivo LoRA")
     lora_weight: float = Field(default=1.0, ge=0.0, le=2.0, description="Peso de escala del LoRA")
     scheduler: Optional[str] = Field(default="EulerA", description="Planificador de ruido: 'EulerA', 'DPM++', 'DDIM', 'UniPC', 'Default'")
+    download_dir: Optional[str] = Field(default=None, description="Directorio de destino opcional para la descarga estructurada de modelos públicos")
+
+
+class CheckPublicModelRequest(BaseModel):
+    model_id: str = Field(..., description="ID de repositorio de Hugging Face (ej. runwayml/stable-diffusion-v1-5)")
+    download_dir: Optional[str] = Field(default=None, description="Directorio donde verificar si el modelo ya está descargado")
+
+
+class CheckPublicModelResponse(BaseModel):
+    model_id: str
+    present: bool
+    local_path: Optional[str] = None
+    size_mb: float = 0.0
+    safe_folder_name: str
+
+
+class DeletePublicModelRequest(BaseModel):
+    model_id: str = Field(..., description="ID de repositorio de Hugging Face a eliminar")
+    download_dir: str = Field(..., description="Directorio donde está alojada la carpeta del modelo")
+
+
+class DeletePublicModelResponse(BaseModel):
+    success: bool
+    model_id: str
+    message: str
+    freed_mb: float = 0.0
 
 
 class LoadModelResponse(BaseModel):

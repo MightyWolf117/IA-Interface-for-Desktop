@@ -14,6 +14,10 @@ from app.schemas.diffusion import (
     ScanResponse,
     LoadModelRequest,
     LoadModelResponse,
+    CheckPublicModelRequest,
+    CheckPublicModelResponse,
+    DeletePublicModelRequest,
+    DeletePublicModelResponse,
     GenerateRequest,
     GenerateResponse,
     ModelStatusResponse,
@@ -103,6 +107,30 @@ async def scan_models_directory(request: ScanRequest):
     return scan_result
 
 
+@router.post("/models/check-public", response_model=CheckPublicModelResponse, summary="Verificar presencia local de modelo público")
+async def check_public_model(request: CheckPublicModelRequest):
+    """
+    Comprueba si un modelo público de Hugging Face ya se encuentra descargado en el directorio indicado.
+    """
+    return await asyncio.to_thread(
+        DiffusionEngine.check_public_model,
+        model_id=request.model_id,
+        download_dir=request.download_dir
+    )
+
+
+@router.post("/models/delete-public", response_model=DeletePublicModelResponse, summary="Eliminar carpeta de modelo público de disco")
+async def delete_public_model(request: DeletePublicModelRequest):
+    """
+    Elimina la versión descargada de un modelo público para liberar espacio en disco.
+    """
+    return await asyncio.to_thread(
+        DiffusionEngine.delete_public_model,
+        model_id=request.model_id,
+        download_dir=request.download_dir
+    )
+
+
 @router.post("/diffusion/load", response_model=LoadModelResponse, summary="Cargar modelo con política de memoria")
 async def load_diffusion_model(request: LoadModelRequest):
     """
@@ -117,7 +145,8 @@ async def load_diffusion_model(request: LoadModelRequest):
             transfer_mode=request.transfer_mode,
             lora_path=request.lora_path,
             lora_weight=request.lora_weight,
-            scheduler=request.scheduler
+            scheduler=request.scheduler,
+            download_dir=request.download_dir
         )
         return result
     except Exception as e:

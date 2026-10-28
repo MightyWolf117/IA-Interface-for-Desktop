@@ -133,11 +133,13 @@ class DiffusionEngine:
         transfer_mode: str = "base64",
         lora_path: Optional[str] = None,
         lora_weight: float = 1.0,
-        scheduler: Optional[str] = "EulerA"
+        scheduler: Optional[str] = "EulerA",
+        download_dir: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Carga un modelo local o remoto de Hugging Face detectando dinámicamente su arquitectura
         y configurando las políticas óptimas de memoria y hardware.
+        Permite descargar modelos públicos estructuradamente en la carpeta que el usuario elija.
         """
         if cls._pipeline is not None:
             cls.unload_model()
@@ -164,13 +166,43 @@ class DiffusionEngine:
                 "message": f"Error crítico: El motor de difusión no está disponible en este entorno Python. Detalle: {detail}"
             }
 
-        # 1. Determinar el adaptador de arquitectura óptimo
-        adapter = ArchitectureRegistry.get_adapter(model_id_or_path)
-        print(f"[DiffusionEngine] Despachando modelo '{model_id_or_path}' al adaptador: {adapter.display_name} ({adapter.arch_id})")
+        # 1. Comprobar si es un modelo público de HF y resolver su directorio local de destino
+        actual_model_path = model_id_or_path
+        if "/" in model_id_or_path and not os.path.exists(model_id_or_path) and download_dir:
+            safe_name = model_id_or_path.replace("/", "--")
+            target_folder = os.path.join(download_dir, safe_name)
 
-        # 2. Cargar a través del adaptador especializado
+            # Comprobar si ya existe descargado con sus archivos principales
+            is_already_downloaded = False
+            if os.path.isdir(target_folder):
+                files = os.listdir(target_folder)
+                if "model_index.json" in files or "modular_model_index.json" in files or any(f.endswith(".safetensors") for f in files):
+                    is_already_downloaded = True
+
+            if is_already_downloaded:
+                print(f"[DiffusionEngine] Modelo público localizado en carpeta del usuario: {target_folder}")
+                actual_model_path = target_folder
+            else:
+                print(f"[DiffusionEngine] Descargando modelo público '{model_id_or_path}' estructuradamente en: {target_folder}...")
+                os.makedirs(target_folder, exist_ok=True)
+                try:
+                    from huggingface_hub import snapshot_download
+                    snapshot_download(
+                        repo_id=model_id_or_path,
+                        local_dir=target_folder
+                    )
+                    actual_model_path = target_folder
+                    print(f"[DiffusionEngine] ¡Descarga de '{model_id_or_path}' completada con éxito en {target_folder}!")
+                except Exception as dl_err:
+                    print(f"[DiffusionEngine] Error al descargar modelo en {target_folder}: {dl_err}. Intentando fallback estándar...")
+
+        # 2. Determinar el adaptador de arquitectura óptimo
+        adapter = ArchitectureRegistry.get_adapter(actual_model_path)
+        print(f"[DiffusionEngine] Despachando modelo '{actual_model_path}' al adaptador: {adapter.display_name} ({adapter.arch_id})")
+
+        # 3. Cargar a través del adaptador especializado
         pipe = adapter.load(
-            model_path=model_id_or_path,
+            model_path=actual_model_path,
             memory_mode=cls._memory_mode,
             scheduler=scheduler,
             lora_path=lora_path,
@@ -292,3 +324,88 @@ class DiffusionEngine:
             "vram_allocated_mb": vram_info.get("vram_allocated_mb", 0),
             "architecture": cls._active_adapter.display_name if cls._active_adapter else "Unknown"
         }
+
+    @classmethod
+    def check_public_model(cls, model_id: str, download_dir: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Comprueba si un modelo público de Hugging Face ya se encuentra descargado en el directorio indicado.
+        """
+        safe_name = model_id.replace("/", "--")
+        if not download_dir or not os.path.isdir(download_dir):
+            return {
+                "model_id": model_id,
+                "present": False,
+                "local_path": None,
+                "size_mb": 0.0,
+                "safe_folder_name": safe_name
+            }
+
+        target_folder = os.path.join(download_dir, safe_name)
+        if os.path.isdir(target_folder):
+            files = os.listdir(target_folder)
+            if "model_index.json" in files or "modular_model_index.json" in files or any(f.endswith(".safetensors") for f in files):
+                total_bytes = 0
+                for root, _, filenames in os.walk(target_folder):
+                    for fn in filenames:
+                        fp = os.path.join(root, fn)
+                        try:
+                            total_bytes += os.path.getsize(fp)
+                        except OSError:
+                            pass
+                return {
+                    "model_id": model_id,
+                    "present": True,
+                    "local_path": target_folder,
+                    "size_mb": round(total_bytes / (1024 * 1024), 2),
+                    "safe_folder_name": safe_name
+                }
+
+        return {
+            "model_id": model_id,
+            "present": False,
+            "local_path": target_folder,
+            "size_mb": 0.0,
+            "safe_folder_name": safe_name
+        }
+
+    @classmethod
+    def delete_public_model(cls, model_id: str, download_dir: str) -> Dict[str, Any]:
+        """
+        Elimina de forma segura la carpeta de un modelo público descargado previamente en disco.
+        """
+        safe_name = model_id.replace("/", "--")
+        target_folder = os.path.join(download_dir, safe_name)
+
+        if not os.path.isdir(target_folder):
+            return {
+                "success": False,
+                "model_id": model_id,
+                "message": f"No se encontró la carpeta del modelo en: {target_folder}",
+                "freed_mb": 0.0
+            }
+
+        total_bytes = 0
+        for root, _, filenames in os.walk(target_folder):
+            for fn in filenames:
+                try:
+                    total_bytes += os.path.getsize(os.path.join(root, fn))
+                except OSError:
+                    pass
+
+        freed_mb = round(total_bytes / (1024 * 1024), 2)
+        import shutil
+        try:
+            shutil.rmtree(target_folder)
+            return {
+                "success": True,
+                "model_id": model_id,
+                "message": f"Modelo {model_id} eliminado exitosamente. {freed_mb} MB liberados.",
+                "freed_mb": freed_mb
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "model_id": model_id,
+                "message": f"Error al eliminar carpeta {target_folder}: {str(e)}",
+                "freed_mb": 0.0
+            }

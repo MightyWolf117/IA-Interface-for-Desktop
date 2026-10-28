@@ -145,7 +145,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - Intercepción y sobrescritura global de `window.alert`, `window.confirm` y `window.prompt` en tiempo de inicialización en [main.js](interface/src/main.js), garantizando inmunidad ante cuadros de diálogo nativos en cualquier componente presente o futuro.
   - Migración y refactorización de todas las alertas en [model_modal.js](interface/src/js/model_modal.js), [diffusion.js](interface/src/js/diffusion.js) y [alerts.js](interface/src/js/alerts.js).
 
+- **Gestor Transparente y Selector de Carpeta para Descarga de Modelos Públicos**:
+  - **Descargas Estructuradas en Carpeta Seleccionada por el Usuario**: Se eliminó la descarga arbitraria y ciega de modelos públicos hacia carpetas ocultas del sistema (`~/.cache/huggingface/hub`). Los usuarios ahora pueden definir exactamente en qué carpeta de su equipo descargar los modelos públicos (por defecto, la misma carpeta escaneada o cualquier otra ruta elegida con el botón `📁 CAMBIAR...`).
+  - **Archivos Estándar Visibles**: Las descargas emplean `snapshot_download` descargando los archivos reales en subcarpetas con nomenclatura clara (`<download_dir>/<proveedor>--<modelo>`), sin symlinks ni hashes opacos, permitiendo inspeccionar su peso, copiarlos o respaldarlos directamente desde el Explorador de Windows.
+  - **Detección de Presencia y Tamaño en Tiempo Real**: En [model_modal.js](interface/src/js/model_modal.js) y la API [diffusion_routes.py](backend/app/api/diffusion_routes.py) (`POST /api/v1/models/check-public`), al seleccionar un modelo de la lista pública la interfaz comprueba automáticamente si ya está presente en el disco, exhibiendo su estado con badges dinámicos (`✅ EN DISCO (X MB)` o `📥 NO DESCARGADO (~2 a 4 GB)`).
+  - **Confirmación Previa antes de Descargas Pesadas**: Antes de iniciar la descarga de gigabytes, el sistema solicita confirmación explícita mediante `cyberConfirm` detallando la ruta exacta de destino.
+  - **Gestión y Borrado de Versiones desde la Interfaz**: Se incorporó el botón `🗑️ BORRAR VERSIÓN` conectado a `POST /api/v1/models/delete-public`, permitiendo purgar modelos públicos descargados para liberar espacio en disco de forma instantánea y segura.
+
 ### Fixed
+
+- **Corrección de Carga de Checkpoints Monolíticos SDXL (`Error no file named model_index.json found in directory`) y Autorreparación de Caché**:
+  - **Causa Raíz Identificada**: Al cargar checkpoints monolíticos locales `.safetensors` de arquitectura SDXL (como `reedFURRYMixSDXL_v26nai.safetensors` o `indigoVoidFurryFusedXL_noobaiV35_fp16.safetensors`), el cargador `from_single_file` de Diffusers requiere los componentes de configuración base de Hugging Face (`stabilityai/stable-diffusion-xl-base-1.0`). Si la primera descarga de dicha configuración en `.cache/huggingface/hub/models--stabilityai--stable-diffusion-xl-base-1.0` se interrumpe, se genera un snapshot incompleto carente de `model_index.json`, provocando que cualquier intento subsiguiente de cargar modelos SDXL colapse de inmediato con `EnvironmentError`.
+  - **Mecanismo de Autorreparación Resiliente en Adaptadores**:
+    - En [sdxl.py](backend/app/services/architectures/sdxl.py) y [sd15.py](backend/app/services/architectures/sd15.py), se implementó un bloque de recuperación automática que detecta excepciones de configuración (`model_index.json` / `EnvironmentError`).
+    - Al interceptar el fallo, el adaptador repara la caché forzando la descarga íntegra del pipeline de referencia (`_download_diffusers_model_config_from_hub` con `force_download=True`) y reintenta la carga inmediatamente sin requerir intervención manual ni reiniciar la aplicación.
+  - **Validación Exitosa**: Se verificó la carga de checkpoints SDXL locales pesados (8.5 GB y 6.6 GB) inicializándose en menos de 2.5 segundos con 7/7 componentes verificados.
 
 - **Empaquetamiento Completo de Módulos de Inferencia IA y Prevención de Corrupción de Binarios (Fallo "diffusers o torch no están disponibles")**:
   - **Causa Raíz Identificada**:

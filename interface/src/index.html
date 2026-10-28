@@ -451,18 +451,55 @@
             </p>
           </div>
 
+          <!-- Configuración de Carpeta Destino para Descargas -->
+          <div class="modal-group" style="background: rgba(4, 7, 16, 0.55); border: 1px dashed rgba(0, 240, 255, 0.25); padding: 10px 14px; clip-path: var(--cyber-cut-sm); margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="modal-label" style="margin-bottom: 0; font-size: 11px; color: var(--neon-cyan);">
+                📥 DESTINO PARA DESCARGAS DE MODELOS PÚBLICOS
+              </label>
+              <span id="download-dir-status" class="cyber-tag" style="font-size: 10px; color: var(--neon-accent); border-color: rgba(0, 240, 255, 0.4);">
+                SINCRONIZADO CON ESCANEO
+              </span>
+            </div>
+            <div class="input-with-button">
+              <input
+                type="text"
+                id="download-path-input"
+                class="cyber-input"
+                placeholder="Carpeta donde se descargarán modelos públicos (ej. E:/modelosLLM/MODELOS IMG)"
+                value="models"
+              />
+              <button type="button" class="cyber-btn" id="browse-download-dir-btn" title="Elegir carpeta de descargas de Windows">
+                <span>📁 CAMBIAR...</span>
+              </button>
+            </div>
+            <p class="modal-hint" style="font-size: 10px; margin-top: 4px;">
+              Los modelos se descargan como carpetas normales sin archivos ocultos. Podrás inspeccionar su tamaño, moverlos o eliminarlos desde el Explorador de Windows en cualquier momento.
+            </p>
+          </div>
+
           <!-- Step 2: Dynamic Model Selector -->
           <div class="modal-group">
-            <label class="modal-label">2. SELECCIONAR MODELO BASE DETECTADO</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="modal-label" style="margin-bottom: 0;">2. SELECCIONAR MODELO BASE</label>
+              <div id="public-model-tools" style="display: none; align-items: center; gap: 8px;">
+                <span id="public-model-status-tag" class="cyber-tag" style="font-size: 10px;">
+                  LOCALIZANDO...
+                </span>
+                <button type="button" class="cyber-btn cyber-btn-sm" id="delete-public-model-btn" style="display: none; padding: 2px 8px; font-size: 10px; border-color: var(--neon-pink); color: var(--neon-pink);" title="Borrar esta versión descargada de disco">
+                  <span>🗑️ BORRAR VERSIÓN</span>
+                </button>
+              </div>
+            </div>
             <select id="model-select-dropdown" class="cyber-select">
+              <optgroup label="Modelos Locales Detectados" id="optgroup-local">
+                <option disabled>Ejecuta un escaneo para detectar modelos locales...</option>
+              </optgroup>
               <optgroup label="Modelos Públicos Verificados" id="optgroup-public">
                 <option value="runwayml/stable-diffusion-v1-5" data-arch="SD 1.5">Stable Diffusion v1.5 [SD 1.5]</option>
                 <option value="stabilityai/sd-turbo" data-arch="SD 2.1 Adversarial">SD-Turbo [SD 2.1 Fast]</option>
                 <option value="segmind/SSD-1B" data-arch="SDXL-Distill">SSD-1B [SDXL Compacto 1024x1024]</option>
                 <option value="circlestone-labs/Anima-Base-v1.0-Diffusers" data-arch="Anima DiT">Anima Base v1.0 [DiT 2B Anime Modular]</option>
-              </optgroup>
-              <optgroup label="Modelos Locales Detectados" id="optgroup-local">
-                <option disabled>Ejecuta un escaneo para detectar modelos locales...</option>
               </optgroup>
             </select>
             <div id="modal-arch-info" class="modal-arch-info-box" style="margin-top: 8px; padding: 8px 12px; background: rgba(10, 15, 29, 0.7); border: 1px solid var(--border-subtle); clip-path: var(--cyber-cut-sm); display: flex; justify-content: space-between; align-items: center;">
