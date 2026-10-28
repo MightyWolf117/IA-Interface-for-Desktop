@@ -7,7 +7,7 @@ bundled directly into Tauri v2 as a managed child process.
 
 import os
 import sys
-from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules, copy_metadata
 
 block_cipher = None
 
@@ -33,6 +33,13 @@ hidden_imports = [
     'transformers',
     'accelerate',
     'safetensors',
+    'requests',
+    'huggingface_hub',
+    'tokenizers',
+    'tqdm',
+    'regex',
+    'filelock',
+    'packaging',
     'PIL',
     'psutil',
     'websockets',
@@ -63,7 +70,19 @@ datas = []
 binaries = []
 
 # Collect all lazy-loaded submodules, data assets, and binaries for AI inference engines
-for pkg in ['diffusers', 'transformers', 'accelerate', 'torch', 'safetensors', 'torchvision']:
+ai_packages = [
+    'diffusers',
+    'transformers',
+    'accelerate',
+    'torch',
+    'safetensors',
+    'torchvision',
+    'huggingface_hub',
+    'tokenizers',
+    'requests',
+]
+
+for pkg in ai_packages:
     try:
         p_datas, p_binaries, p_hidden = collect_all(pkg)
         datas += p_datas
@@ -71,6 +90,35 @@ for pkg in ['diffusers', 'transformers', 'accelerate', 'torch', 'safetensors', '
         hidden_imports += p_hidden
     except Exception as e:
         print(f"[SPEC] Aviso recolectando paquete {pkg}: {e}")
+
+# Copy package distribution metadata (.dist-info) required by transformers/huggingface_hub at runtime
+metadata_packages = [
+    'requests',
+    'transformers',
+    'diffusers',
+    'huggingface_hub',
+    'tokenizers',
+    'torch',
+    'torchvision',
+    'accelerate',
+    'safetensors',
+    'tqdm',
+    'regex',
+    'filelock',
+    'numpy',
+    'packaging',
+    'pillow',
+    'certifi',
+    'urllib3',
+    'idna',
+    'charset_normalizer',
+]
+
+for pkg in metadata_packages:
+    try:
+        datas += copy_metadata(pkg)
+    except Exception as e:
+        print(f"[SPEC] Aviso copiando metadata de {pkg}: {e}")
 
 a = Analysis(
     ['run.py'],
@@ -83,11 +131,9 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         'tkinter.test',
-        'unittest',
         'pytest',
         'torch.testing',
         'torch.utils.benchmark',
-        'test',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

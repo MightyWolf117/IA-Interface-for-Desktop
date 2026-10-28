@@ -50,22 +50,19 @@ def main():
     print(f"[BUILD] Copiando distribución compilada a: {tauri_resources_dir}")
     shutil.copytree(dist_dir, tauri_resources_dir)
 
-    # Optimización: eliminar símbolos de depuración (.pdb) y caches redundantes
+    # Optimización: eliminar únicamente símbolos de depuración (.pdb) pesados
     removed_bytes = 0
     for root, dirs, files in os.walk(tauri_resources_dir, topdown=False):
         for f in files:
-            if f.endswith(".pdb") or f.endswith(".pyc") or f.endswith(".pyo"):
+            if f.endswith(".pdb"):
                 p = os.path.join(root, f)
                 try:
                     removed_bytes += os.path.getsize(p)
                     os.remove(p)
                 except OSError:
                     pass
-        for d in dirs:
-            if d == "__pycache__":
-                shutil.rmtree(os.path.join(root, d), ignore_errors=True)
 
-    print(f"[BUILD] ¡API compilada e integrada en los recursos de Tauri exitosamente! (Limpieza optimizada: {removed_bytes / (1024*1024):.2f} MB liberados)")
+    print(f"[BUILD] ¡API compilada e integrada en los recursos de Tauri exitosamente! (Limpieza de símbolos .pdb: {removed_bytes / (1024*1024):.2f} MB liberados)")
 
 if __name__ == "__main__":
     main()
