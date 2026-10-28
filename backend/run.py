@@ -1,7 +1,79 @@
+import io
 import os
 import sys
+import copy
 import subprocess
 import multiprocessing
+
+# ==============================================================================
+# WINDOWS WINDOWLESS / NOCONSOLE STREAM SAFEGUARD
+# When running as a GUI application, with CREATE_NO_WINDOW, or in PyInstaller
+# windowless mode, sys.stdout and sys.stderr are initialized as None.
+# This causes Uvicorn's ColourizedFormatter to crash with:
+#   AttributeError: 'NoneType' object has no attribute 'isatty'
+# ==============================================================================
+class SafeStream(io.StringIO):
+    def __init__(self, log_filepath=None, target_stream=None):
+        super().__init__()
+        self.target = target_stream
+        self.log_filepath = log_filepath
+        self._file = None
+        if log_filepath:
+            try:
+                os.makedirs(os.path.dirname(log_filepath), exist_ok=True)
+                self._file = open(log_filepath, "a", encoding="utf-8", buffering=1)
+            except Exception:
+                self._file = None
+
+    def isatty(self):
+        if self.target and hasattr(self.target, "isatty"):
+            try:
+                return self.target.isatty()
+            except Exception:
+                return False
+        return False
+
+    def write(self, s):
+        if not s:
+            return 0
+        if self.target and hasattr(self.target, "write"):
+            try:
+                self.target.write(s)
+            except Exception:
+                pass
+        if self._file:
+            try:
+                self._file.write(s)
+            except Exception:
+                pass
+        return len(s)
+
+    def flush(self):
+        if self.target and hasattr(self.target, "flush"):
+            try:
+                self.target.flush()
+            except Exception:
+                pass
+        if self._file:
+            try:
+                self._file.flush()
+            except Exception:
+                pass
+
+# Determine a user-writable path for logging
+log_dir = os.path.join(
+    os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA") or os.path.expanduser("~"),
+    "CYBER-IA",
+    "logs"
+)
+log_file = os.path.join(log_dir, "backend.log")
+
+if sys.stdout is None or not hasattr(sys.stdout, "isatty"):
+    sys.stdout = SafeStream(log_filepath=log_file, target_stream=sys.stdout)
+if sys.stderr is None or not hasattr(sys.stderr, "isatty"):
+    sys.stderr = SafeStream(log_filepath=log_file, target_stream=sys.stderr)
+if sys.stdin is None:
+    sys.stdin = io.StringIO()
 
 is_frozen = getattr(sys, "frozen", False)
 
@@ -52,12 +124,21 @@ if __name__ == "__main__":
         print(f"[CYBER-IA] Nota telemetría inicial: {e}")
 
     import uvicorn
+
+    # Setup safe logging configuration without colourized isatty dependency
+    log_config = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
+    if "formatters" in log_config:
+        if "default" in log_config["formatters"]:
+            log_config["formatters"]["default"]["use_colors"] = False
+        if "access" in log_config["formatters"]:
+            log_config["formatters"]["access"]["use_colors"] = False
+
     print("[CYBER-IA] Iniciando Backend FastAPI en http://127.0.0.1:8000...")
     # reload=False ensures clean PyTorch CUDA contexts on Windows without child spawn conflicts
     reload_opt = ("--reload" in sys.argv) and (not is_frozen)
     if reload_opt:
-        uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+        uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True, log_config=log_config)
     else:
         from app.main import app
-        uvicorn.run(app, host="127.0.0.1", port=8000)
+        uvicorn.run(app, host="127.0.0.1", port=8000, log_config=log_config)
 
