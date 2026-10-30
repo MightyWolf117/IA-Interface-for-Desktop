@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Release](https://img.shields.io/badge/Versión-v1.0.0-00f0ff?style=for-the-badge)
+![Release](https://img.shields.io/badge/Versión-v1.1.0-00f0ff?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Estado-Estable_Producción-00ff66?style=for-the-badge)
 ![Target](https://img.shields.io/badge/Arquitectura-Multi--Motor_IA-ff0055?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Plataforma-Windows_10%2F11_x64-7928ca?style=for-the-badge)
@@ -166,6 +166,33 @@ graph TD
   3. **Optimización de Memoria (Eliminación de Swap PCIe)**:
      - En una GPU de 6 GB, el modelo DiT 2B ocupa 5.4 GB base. Generar a 768x768 requería ~800 MB de buffers de atención, desbordando los 6,143 MB y activando la memoria compartida del sistema en Windows (22s por paso).
      - Se añadió aislamiento en `with torch.inference_mode():` y vaciado preventivo `torch.cuda.empty_cache()` antes de cada llamada, reduciendo la fragmentación de memoria y estabilizando la ejecución.
+
+### Parche 08: Monitor en Vivo de Descarga de Modelos Públicos
+- **Problema Reportado**: Las descargas de modelos públicos no ofrecían retroalimentación en tiempo real en la interfaz. El botón permanecía estático en "DESCARGANDO..." sin informar sobre el tamaño descargado ni el porcentaje.
+- **Solución Implementada**:
+  - Creación de `HFDownloadProgressTracker(tqdm)` en [diffusion_engine.py](backend/app/services/diffusion_engine.py).
+  - Emisión de paquetes WebSocket `download_progress` vía `/ws/telemetry` en [diffusion_routes.py](backend/app/api/diffusion_routes.py).
+  - Barra de progreso HUD Cyberpunk en [index.html](interface/src/index.html), [telemetry.js](interface/src/js/telemetry.js) y [model_modal.js](interface/src/js/model_modal.js) con visualización de MB descargados / totales y porcentaje interactivo.
+
+### Parche 09: Aislamiento Offline y Configuración Pre-empaquetada para Checkpoints Locales
+- **Problema Reportado**: Fallo crítico `Error no file named model_index.json found in directory ...` al cargar archivos `.safetensors` locales.
+- **Causa Raíz**:
+  - `huggingface_hub` crea enlaces simbólicos NTFS relativos (`..\..\blobs\...`) en Windows que los procesos sin elevación de Tauri no pueden resolver.
+  - Al usar `from_single_file`, Diffusers intentaba conectarse a internet para descargar configuraciones del Hub.
+- **Solución Implementada**:
+  - Incorporación de carpetas de configuración limpias para SDXL y SD 1.5 en `backend/app/core/configs/` sin enlaces simbólicos.
+  - Creación de [get_model_config_dir](backend/app/core/paths.py) y pase explícito `config=cfg_path` a `from_single_file` en [sdxl.py](backend/app/services/architectures/sdxl.py) y [sd15.py](backend/app/services/architectures/sd15.py).
+  - Desactivación global de symlinks con `HF_HUB_DISABLE_SYMLINKS=1` y función de saneamiento automático `sanitize_hf_cache()`.
+
+### Parche 10: Introspección y Callback de Pasos en Tiempo Real
+- **Problema Reportado**: La interfaz se quedaba permanentemente marcando "PASO 1" durante la inferencia y saltaba abruptamente al final.
+- **Causa Raíz**:
+  - La inspección de `pipeline.__call__.__code__.co_varnames` devolvía `('args', 'kwargs')` debido a decoradores de PyTorch/Diffusers, por lo que nunca se inyectaba el callback.
+  - En Anima DiT, la emisión de pasos estaba fija al inicio y final.
+- **Solución Implementada**:
+  - Reemplazo por `inspect.signature(pipeline.__call__)` e inyección de `callback_on_step_end` con `callback_on_step_end_tensor_inputs=["latents"]` en [sdxl.py](backend/app/services/architectures/sdxl.py), [sd15.py](backend/app/services/architectures/sd15.py) y [auto_diffusers.py](backend/app/services/architectures/auto_diffusers.py).
+  - Monitor continuo en vivo para Anima DiT en [anima.py](backend/app/services/architectures/anima.py).
+  - Reinicio automático del contador de pasos en [diffusion.js](interface/src/js/diffusion.js).
 
 ---
 

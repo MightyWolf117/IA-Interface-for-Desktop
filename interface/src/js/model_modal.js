@@ -299,6 +299,13 @@ export function initModelConfigModal() {
       const downloadDir = downloadPathInput?.value.trim() || scanPathInput?.value.trim() || "models";
 
       // Si es un modelo público no descargado en disco, pedir confirmación antes de iniciar descarga pesada
+      const dlContainer = document.querySelector("#modal-download-progress-container");
+      const dlFill = document.querySelector("#modal-download-progress-fill");
+      const dlStatus = document.querySelector("#modal-download-status");
+      const dlPercent = document.querySelector("#modal-download-percent");
+      const dlFile = document.querySelector("#modal-download-file");
+      const dlMb = document.querySelector("#modal-download-mb");
+
       if (selectedModel.includes("/") && !publicModelCacheStatus.present) {
         const safeFolder = selectedModel.replace("/", "--");
         const confirmed = await cyberConfirm(
@@ -310,8 +317,17 @@ export function initModelConfigModal() {
           return;
         }
         applyBtn.textContent = "DESCARGANDO MODELO A DISCO...";
+        if (dlContainer) {
+          dlContainer.style.display = "block";
+          if (dlFill) dlFill.style.width = "0%";
+          if (dlStatus) dlStatus.textContent = "INICIANDO DESCARGA...";
+          if (dlPercent) dlPercent.textContent = "0%";
+          if (dlFile) dlFile.textContent = "Conectando con Hugging Face...";
+          if (dlMb) dlMb.textContent = "0 / 0 MB";
+        }
       } else {
         applyBtn.textContent = "INICIALIZANDO MOTOR...";
+        if (dlContainer) dlContainer.style.display = "none";
       }
 
       applyBtn.disabled = true;
@@ -392,6 +408,8 @@ export function initModelConfigModal() {
       } finally {
         applyBtn.disabled = false;
         applyBtn.textContent = "INICIALIZAR MOTOR Y CARGAR MODELO";
+        const dlContainer = document.querySelector("#modal-download-progress-container");
+        if (dlContainer) dlContainer.style.display = "none";
       }
     });
   }

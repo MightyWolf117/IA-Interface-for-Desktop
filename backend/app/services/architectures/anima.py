@@ -260,15 +260,49 @@ class AnimaDiTAdapter(BaseModelAdapter):
 
         print(f"[AnimaDiTAdapter] Inferencia: Prompt='{prompt[:60]}...' | CFG={safe_guidance} | Steps={step_count} | Dims={width}x{height}")
 
-        # Simulación de callback para Anima Modular
-        if step_callback:
-            try:
-                step_callback(1, step_count, 10.0)
-            except Exception:
-                pass
+        # Callback y monitor continuo en vivo para Anima Modular
+        stop_heartbeat = False
+        heartbeat_thread = None
 
-        with torch.inference_mode():
-            res = pipeline(**kwargs)
+        if step_callback:
+            def step_end_cb(pipe, step_idx, timestep, callback_kwargs):
+                try:
+                    pct = round(((step_idx + 1) / step_count) * 100, 1)
+                    step_callback(step_idx + 1, step_count, pct)
+                except Exception:
+                    pass
+                return callback_kwargs
+
+            kwargs["callback_on_step_end"] = step_end_cb
+
+            import threading
+            def _heartbeat():
+                curr = 1
+                try:
+                    step_callback(1, step_count, round((1 / step_count) * 100, 1))
+                except Exception:
+                    pass
+                while not stop_heartbeat and curr < step_count - 1:
+                    time.sleep(0.7)
+                    if stop_heartbeat:
+                        break
+                    curr += 1
+                    pct = round((curr / step_count) * 100, 1)
+                    try:
+                        step_callback(curr, step_count, pct)
+                    except Exception:
+                        pass
+
+            heartbeat_thread = threading.Thread(target=_heartbeat, daemon=True)
+            heartbeat_thread.start()
+
+        try:
+            with torch.inference_mode():
+                res = pipeline(**kwargs)
+        finally:
+            stop_heartbeat = True
+            if heartbeat_thread and heartbeat_thread.is_alive():
+                heartbeat_thread.join(timeout=0.5)
 
         if step_callback:
             try:

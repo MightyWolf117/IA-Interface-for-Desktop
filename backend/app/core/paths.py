@@ -6,6 +6,8 @@ preventing PermissionError when installed in protected system paths (e.g. Progra
 
 import os
 import sys
+import shutil
+from typing import Optional
 
 
 def get_outputs_dir() -> str:
@@ -55,3 +57,65 @@ def get_outputs_dir() -> str:
     fallback_dir = os.path.join(local_app_data, "CYBER-IA", "outputs")
     os.makedirs(fallback_dir, exist_ok=True)
     return fallback_dir
+
+
+def get_model_config_dir(arch_id: str) -> Optional[str]:
+    """
+    Retorna la ruta absoluta al directorio de configuraciones offline pre-empaquetadas
+    para la arquitectura especificada (sdxl, sd15, etc.).
+    Permite cargar modelos .safetensors locales de forma 100% offline sin consultar
+    el Hugging Face Hub ni depender de enlaces simbólicos en Windows.
+    """
+    candidates = []
+
+    # 1. Modo empaquetado (PyInstaller)
+    if getattr(sys, "frozen", False):
+        base_dir = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+        candidates.append(os.path.join(base_dir, "app", "core", "configs", arch_id))
+        candidates.append(os.path.join(base_dir, "_internal", "app", "core", "configs", arch_id))
+
+    # 2. Modo desarrollo relativo a paths.py
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates.append(os.path.join(current_dir, "configs", arch_id))
+
+    for c in candidates:
+        if os.path.isdir(c) and os.path.isfile(os.path.join(c, "model_index.json")):
+            return c
+    return None
+
+
+def sanitize_hf_cache() -> int:
+    """
+    Inspecciona la caché de Hugging Face en Windows y convierte cualquier enlace simbólico
+    (NTFS relative symlink) a archivos concretos con su contenido original.
+    Evita fallos 'Error no file named model_index.json' cuando los procesos de Tauri o
+    PyInstaller se ejecutan sin elevación o con políticas restrictivas de symlinks.
+    """
+    hf_home = os.environ.get("HF_HOME") or os.path.join(
+        os.environ.get("USERPROFILE") or os.path.expanduser("~"),
+        ".cache",
+        "huggingface",
+        "hub"
+    )
+    if not os.path.isdir(hf_home):
+        return 0
+
+    converted = 0
+    try:
+        for root, _, files in os.walk(hf_home):
+            for f in files:
+                fp = os.path.join(root, f)
+                if os.path.islink(fp):
+                    try:
+                        target = os.path.realpath(fp)
+                        if os.path.exists(target):
+                            os.remove(fp)
+                            shutil.copyfile(target, fp)
+                            converted += 1
+                    except Exception:
+                        pass
+    except Exception as e:
+        print(f"[sanitize_hf_cache] Aviso durante saneamiento: {e}")
+
+    return converted
+

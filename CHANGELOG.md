@@ -6,6 +6,31 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-30
+
+### Added
+- **Progreso en Vivo de Descargas de Modelos Públicos**:
+  - Implementación de un monitor de descarga en tiempo real en [diffusion_engine.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/diffusion_engine.py) y [diffusion_routes.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/api/diffusion_routes.py) utilizando `tqdm_class` para rastrear bytes descargados, tamaño total, archivo actual y porcentaje completado.
+  - Transmisión continua mediante WebSocket (`/ws/telemetry`) con paquetes de tipo `download_progress`.
+  - Componente visual HUD Cyberpunk en [index.html](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/index.html), [telemetry.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/telemetry.js) y [model_modal.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/model_modal.js) que despliega barra de progreso neón, porcentaje, estado y MB descargados / totales en el modal de configuración de modelos.
+- **Configuraciones Offline Pre-empaquetadas para Modelos Locales**:
+  - Incorporación de carpetas de configuración limpias y autónomas para arquitecturas SDXL y SD 1.5 en `backend/app/core/configs/` libres de enlaces simbólicos.
+  - Función de resolución de rutas [get_model_config_dir](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/core/paths.py) compatible tanto con el entorno de desarrollo como con ejecutables congelados por PyInstaller (`sys._MEIPASS`).
+  - Empaquetado automático de `app/core/configs` dentro del archivo de especificación de PyInstaller en [cyber-ia-api.spec](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/cyber-ia-api.spec).
+  - Carga 100% offline de archivos `.safetensors` locales en [sdxl.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/sdxl.py) y [sd15.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/sd15.py) sin realizar consultas a la red ni requerir descargas adicionales.
+
+### Fixed
+- **Resolución de Error Crítico `model_index.json not found` en Carga de Modelos Locales**:
+  - Desactivación global de enlaces simbólicos en Windows mediante la variable de entorno `HF_HUB_DISABLE_SYMLINKS=1` en [run.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/run.py) y [diffusion_engine.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/diffusion_engine.py).
+  - Implementación del procedimiento de saneamiento automático [sanitize_hf_cache](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/core/paths.py) que convierte enlaces simbólicos NTFS relativos existentes en archivos reales con su contenido original.
+  - Suministro explícito de configuración local en `from_single_file(..., config=...)` eliminando el fallo originado por symlinks rotos o permisos insuficientes en procesos no elevados de Tauri.
+- **Actualización en Tiempo Real de Pasos de Inferencia (Corrección del Estado Congelado en "PASO 1")**:
+  - Corrección de la introspección de parámetros en [sdxl.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/sdxl.py), [sd15.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/sd15.py) y [auto_diffusers.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/auto_diffusers.py): sustitución de `getattr(pipeline.__call__.__code__, "co_varnames")` por `inspect.signature(pipeline.__call__)`.
+  - Inyección adecuada de `callback_on_step_end` junto con `callback_on_step_end_tensor_inputs=["latents"]`, permitiendo la emisión de cada paso (1, 2, ..., N) al callback de difusión.
+  - Monitor continuo y callback en vivo para la arquitectura modular DiT en [anima.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/anima.py) evitando el estancamiento visual y el salto directo al final.
+  - Reinicio automático del contador y la barra de progreso al iniciar una nueva inferencia en [diffusion.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/diffusion.js).
+
+
 ## [1.0.0] - 2026-10-27
 
 ### Added

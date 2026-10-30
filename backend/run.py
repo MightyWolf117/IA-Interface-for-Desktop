@@ -5,6 +5,9 @@ import copy
 import subprocess
 import multiprocessing
 
+# Disable symbolic links on Windows for Hugging Face Hub to ensure standard file copies
+os.environ["HF_HUB_DISABLE_SYMLINKS"] = "1"
+
 # ==============================================================================
 # WINDOWS WINDOWLESS / NOCONSOLE STREAM SAFEGUARD
 # When running as a GUI application, with CREATE_NO_WINDOW, or in PyInstaller
@@ -126,6 +129,15 @@ if hasattr(sys, "_base_executable"):
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     
+    # Sanitize Windows Hugging Face Hub symlinks into real files to avoid model loading errors
+    try:
+        from app.core.paths import sanitize_hf_cache
+        fixed_links = sanitize_hf_cache()
+        if fixed_links > 0:
+            print(f"[CYBER-IA] Se sanearon {fixed_links} enlaces simbólicos en la caché de Hugging Face.")
+    except Exception as e:
+        print(f"[CYBER-IA] Aviso comprobando caché Hugging Face: {e}")
+
     # Import app components inside venv
     try:
         from app.core.hardware import HardwareDetector

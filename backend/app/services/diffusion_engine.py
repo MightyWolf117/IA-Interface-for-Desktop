@@ -134,12 +134,14 @@ class DiffusionEngine:
         lora_path: Optional[str] = None,
         lora_weight: float = 1.0,
         scheduler: Optional[str] = "EulerA",
-        download_dir: Optional[str] = None
+        download_dir: Optional[str] = None,
+        download_callback: Optional[Callable[[str, int, int, str, float], None]] = None
     ) -> Dict[str, Any]:
         """
         Carga un modelo local o remoto de Hugging Face detectando dinámicamente su arquitectura
         y configurando las políticas óptimas de memoria y hardware.
-        Permite descargar modelos públicos estructuradamente en la carpeta que el usuario elija.
+        Permite descargar modelos públicos estructuradamente en la carpeta que el usuario elija
+        y reporta el progreso de descarga en tiempo real.
         """
         if cls._pipeline is not None:
             cls.unload_model()
@@ -182,16 +184,54 @@ class DiffusionEngine:
             if is_already_downloaded:
                 print(f"[DiffusionEngine] Modelo público localizado en carpeta del usuario: {target_folder}")
                 actual_model_path = target_folder
+                if download_callback:
+                    download_callback(model_id_or_path, 1, 1, "Modelo localizado en disco.", 100.0)
             else:
                 print(f"[DiffusionEngine] Descargando modelo público '{model_id_or_path}' estructuradamente en: {target_folder}...")
                 os.makedirs(target_folder, exist_ok=True)
                 try:
                     from huggingface_hub import snapshot_download
+                    from tqdm.auto import tqdm
+
+                    class HFDownloadProgressTracker(tqdm):
+                        def __init__(self, *args, **kwargs):
+                            super().__init__(*args, **kwargs)
+                            self._desc_text = kwargs.get("desc", "") or "Descargando componentes"
+                            self._unit_name = kwargs.get("unit", "")
+                            self._send_status()
+
+                        def update(self, n=1):
+                            super().update(n)
+                            self._send_status()
+
+                        def _send_status(self):
+                            if download_callback and self.total:
+                                pct = round(min(max((self.n / self.total) * 100, 0.0), 100.0), 1)
+                                if self._unit_name == "B" or self.total > 100000:
+                                    download_callback(
+                                        model_id_or_path,
+                                        int(self.n),
+                                        int(self.total),
+                                        str(self._desc_text),
+                                        pct
+                                    )
+                                else:
+                                    download_callback(
+                                        model_id_or_path,
+                                        int(self.n * 1024 * 1024),
+                                        int(self.total * 1024 * 1024),
+                                        f"{self._desc_text} ({self.n}/{self.total})",
+                                        pct
+                                    )
+
                     snapshot_download(
                         repo_id=model_id_or_path,
-                        local_dir=target_folder
+                        local_dir=target_folder,
+                        tqdm_class=HFDownloadProgressTracker
                     )
                     actual_model_path = target_folder
+                    if download_callback:
+                        download_callback(model_id_or_path, 1, 1, "Descarga completada.", 100.0)
                     print(f"[DiffusionEngine] ¡Descarga de '{model_id_or_path}' completada con éxito en {target_folder}!")
                 except Exception as dl_err:
                     print(f"[DiffusionEngine] Error al descargar modelo en {target_folder}: {dl_err}. Intentando fallback estándar...")

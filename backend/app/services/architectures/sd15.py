@@ -71,27 +71,25 @@ class SD15Adapter(BaseModelAdapter):
         torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
         if os.path.isfile(model_path) and model_path.endswith((".safetensors", ".ckpt")):
+            from app.core.paths import get_model_config_dir
+            sd15_cfg = get_model_config_dir("sd15")
+            single_file_kwargs = {
+                "torch_dtype": torch_dtype,
+                "use_safetensors": True,
+                "load_safety_checker": False
+            }
+            if sd15_cfg:
+                print(f"[SD15Adapter] Utilizando configuración offline pre-empaquetada desde: {sd15_cfg}")
+                single_file_kwargs["config"] = sd15_cfg
+
             try:
                 pipe = StableDiffusionPipeline.from_single_file(
                     model_path,
-                    torch_dtype=torch_dtype,
-                    use_safetensors=True,
-                    load_safety_checker=False
+                    **single_file_kwargs
                 )
             except Exception as e:
                 if "model_index.json" in str(e) or "EnvironmentError" in type(e).__name__:
-                    print(f"[SD15Adapter] Caché de configuración incompleta o corrupta ({e}). Reparando automáticamente...")
-                    try:
-                        from diffusers.loaders.single_file import _download_diffusers_model_config_from_hub
-                        _download_diffusers_model_config_from_hub(
-                            "stable-diffusion-v1-5/stable-diffusion-v1-5",
-                            cache_dir=None,
-                            revision=None,
-                            proxies=None,
-                            force_download=True
-                        )
-                    except Exception as dl_err:
-                        print(f"[SD15Adapter] Aviso descargando config: {dl_err}")
+                    print(f"[SD15Adapter] Fallo con configuración personalizada ({e}). Reintentando carga directa...")
                     pipe = StableDiffusionPipeline.from_single_file(
                         model_path,
                         torch_dtype=torch_dtype,
@@ -162,28 +160,25 @@ class SD15Adapter(BaseModelAdapter):
         generator = torch.Generator(device="cpu").manual_seed(seed)
         step_count = max(int(steps), 1)
 
-        def step_end_cb(pipe, step_idx, timestep, callback_kwargs):
-            if step_callback:
+        if step_callback:
+            import inspect
+
+            def step_end_cb(pipe, step_idx, timestep, callback_kwargs):
                 try:
                     pct = round(((step_idx + 1) / step_count) * 100, 1)
                     step_callback(step_idx + 1, step_count, pct)
                 except Exception:
                     pass
-            return callback_kwargs
+                return callback_kwargs
 
-        kwargs = {
-            "prompt": prompt,
-            "negative_prompt": negative_prompt,
-            "width": width,
-            "height": height,
-            "num_inference_steps": step_count,
-            "guidance_scale": guidance_scale,
-            "generator": generator
-        }
-
-        call_params = getattr(pipeline.__call__.__code__, "co_varnames", [])
-        if "callback_on_step_end" in call_params and step_callback:
-            kwargs["callback_on_step_end"] = step_end_cb
+            sig = inspect.signature(pipeline.__call__)
+            if "callback_on_step_end" in sig.parameters or hasattr(pipeline, "callback_on_step_end"):
+                kwargs["callback_on_step_end"] = step_end_cb
+                if "callback_on_step_end_tensor_inputs" in sig.parameters:
+                    kwargs["callback_on_step_end_tensor_inputs"] = ["latents"]
+            elif "callback" in sig.parameters:
+                kwargs["callback"] = lambda step, ts, lat: step_callback(step + 1, step_count, round(((step + 1) / step_count) * 100, 1))
+                kwargs["callback_steps"] = 1
 
         res = pipeline(**kwargs)
         return res.images[0]

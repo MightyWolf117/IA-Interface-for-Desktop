@@ -5,7 +5,7 @@
 [![Español](https://img.shields.io/badge/Idioma-Español-00f0ff?style=flat-square)](README.md)
 [![English](https://img.shields.io/badge/Language-English-ff0055?style=flat-square)](README_EN.md)
 
-![Version](https://img.shields.io/badge/Release-v1.0.0-00f0ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/Release-v1.1.0-00f0ff?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-GPL--3.0-ff0055?style=for-the-badge)
 ![Framework](https://img.shields.io/badge/Desktop-Tauri_v2-00ff66?style=for-the-badge)
 ![Backend](https://img.shields.io/badge/API-FastAPI_0.162-ffb700?style=for-the-badge)

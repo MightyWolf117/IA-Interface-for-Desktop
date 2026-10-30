@@ -32,7 +32,7 @@
           </div>
           <div class="brand-text">
             <div class="brand-title" data-text="CYBER-IA">CYBER-IA</div>
-            <div class="brand-sub">NEURAL DESKTOP v1.0.0 // TAURI v2</div>
+            <div class="brand-sub">NEURAL DESKTOP v1.1.0 // TAURI v2</div>
           </div>
         </div>
 
@@ -97,6 +97,25 @@
             </div>
             <div class="alert-description" id="alert-desc">
               El consumo de recursos ha alcanzado un límite peligroso que puede desestabilizar la GPU o provocar el bloqueo de controladores.
+            </div>
+          </div>
+
+          <!-- Progreso de Descarga en Vivo -->
+          <div id="modal-download-progress-container" style="display: none; margin-top: 16px; padding: 12px 14px; background: rgba(0, 10, 20, 0.85); border: 1px solid var(--neon-cyan); clip-path: var(--cyber-cut-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span id="modal-download-status" style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan); letter-spacing: 1px;">
+                DESCARGANDO MODELO PÚBLICO A DISCO...
+              </span>
+              <span id="modal-download-percent" style="font-family: var(--font-mono); font-size: 11px; font-weight: bold; color: var(--neon-accent);">
+                0%
+              </span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); position: relative; overflow: hidden;">
+              <div id="modal-download-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-accent)); transition: width 0.15s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono);">
+              <span id="modal-download-file">Conectando con repositorio...</span>
+              <span id="modal-download-mb">0 / 0 MB</span>
             </div>
           </div>
         </div>
@@ -270,6 +289,25 @@
               </div>
             </div>
           </div>
+
+          <!-- Progreso de Descarga en Vivo -->
+          <div id="modal-download-progress-container" style="display: none; margin-top: 16px; padding: 12px 14px; background: rgba(0, 10, 20, 0.85); border: 1px solid var(--neon-cyan); clip-path: var(--cyber-cut-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span id="modal-download-status" style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan); letter-spacing: 1px;">
+                DESCARGANDO MODELO PÚBLICO A DISCO...
+              </span>
+              <span id="modal-download-percent" style="font-family: var(--font-mono); font-size: 11px; font-weight: bold; color: var(--neon-accent);">
+                0%
+              </span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); position: relative; overflow: hidden;">
+              <div id="modal-download-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-accent)); transition: width 0.15s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono);">
+              <span id="modal-download-file">Conectando con repositorio...</span>
+              <span id="modal-download-mb">0 / 0 MB</span>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -409,6 +447,25 @@
               <div id="logs-entries">
                 <!-- Log rows injected dynamically -->
               </div>
+            </div>
+          </div>
+
+          <!-- Progreso de Descarga en Vivo -->
+          <div id="modal-download-progress-container" style="display: none; margin-top: 16px; padding: 12px 14px; background: rgba(0, 10, 20, 0.85); border: 1px solid var(--neon-cyan); clip-path: var(--cyber-cut-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span id="modal-download-status" style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan); letter-spacing: 1px;">
+                DESCARGANDO MODELO PÚBLICO A DISCO...
+              </span>
+              <span id="modal-download-percent" style="font-family: var(--font-mono); font-size: 11px; font-weight: bold; color: var(--neon-accent);">
+                0%
+              </span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); position: relative; overflow: hidden;">
+              <div id="modal-download-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-accent)); transition: width 0.15s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono);">
+              <span id="modal-download-file">Conectando con repositorio...</span>
+              <span id="modal-download-mb">0 / 0 MB</span>
             </div>
           </div>
         </div>
@@ -600,6 +657,43 @@
                   </div>
                 </div>
               </label>
+            </div>
+          </div>
+                  <!-- Progreso de Descarga en Vivo -->
+          <div id="modal-download-progress-container" style="display: none; margin-top: 16px; padding: 12px 14px; background: rgba(0, 10, 20, 0.85); border: 1px solid var(--neon-cyan); clip-path: var(--cyber-cut-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span id="modal-download-status" style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan); letter-spacing: 1px;">
+                DESCARGANDO MODELO PÚBLICO A DISCO...
+              </span>
+              <span id="modal-download-percent" style="font-family: var(--font-mono); font-size: 11px; font-weight: bold; color: var(--neon-accent);">
+                0%
+              </span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); position: relative; overflow: hidden;">
+              <div id="modal-download-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-accent)); transition: width 0.15s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono);">
+              <span id="modal-download-file">Conectando con repositorio...</span>
+              <span id="modal-download-mb">0 / 0 MB</span>
+            </div>
+          </div>
+
+          <!-- Progreso de Descarga en Vivo -->
+          <div id="modal-download-progress-container" style="display: none; margin-top: 16px; padding: 12px 14px; background: rgba(0, 10, 20, 0.85); border: 1px solid var(--neon-cyan); clip-path: var(--cyber-cut-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span id="modal-download-status" style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan); letter-spacing: 1px;">
+                DESCARGANDO MODELO PÚBLICO A DISCO...
+              </span>
+              <span id="modal-download-percent" style="font-family: var(--font-mono); font-size: 11px; font-weight: bold; color: var(--neon-accent);">
+                0%
+              </span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); position: relative; overflow: hidden;">
+              <div id="modal-download-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-accent)); transition: width 0.15s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono);">
+              <span id="modal-download-file">Conectando con repositorio...</span>
+              <span id="modal-download-mb">0 / 0 MB</span>
             </div>
           </div>
         </div>

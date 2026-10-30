@@ -119,28 +119,25 @@ class AutoDiffusersAdapter(BaseModelAdapter):
         generator = torch.Generator(device="cpu").manual_seed(seed)
         step_count = max(int(steps), 1)
 
-        def step_end_cb(pipe, step_idx, timestep, callback_kwargs):
-            if step_callback:
+        if step_callback:
+            import inspect
+
+            def step_end_cb(pipe, step_idx, timestep, callback_kwargs):
                 try:
                     pct = round(((step_idx + 1) / step_count) * 100, 1)
                     step_callback(step_idx + 1, step_count, pct)
                 except Exception:
                     pass
-            return callback_kwargs
+                return callback_kwargs
 
-        kwargs = {
-            "prompt": prompt,
-            "negative_prompt": negative_prompt,
-            "width": width,
-            "height": height,
-            "num_inference_steps": step_count,
-            "guidance_scale": guidance_scale,
-            "generator": generator
-        }
-
-        call_params = getattr(pipeline.__call__.__code__, "co_varnames", [])
-        if "callback_on_step_end" in call_params and step_callback:
-            kwargs["callback_on_step_end"] = step_end_cb
+            sig = inspect.signature(pipeline.__call__)
+            if "callback_on_step_end" in sig.parameters or hasattr(pipeline, "callback_on_step_end"):
+                kwargs["callback_on_step_end"] = step_end_cb
+                if "callback_on_step_end_tensor_inputs" in sig.parameters:
+                    kwargs["callback_on_step_end_tensor_inputs"] = ["latents"]
+            elif "callback" in sig.parameters:
+                kwargs["callback"] = lambda step, ts, lat: step_callback(step + 1, step_count, round(((step + 1) / step_count) * 100, 1))
+                kwargs["callback_steps"] = 1
 
         res = pipeline(**kwargs)
         return res.images[0]

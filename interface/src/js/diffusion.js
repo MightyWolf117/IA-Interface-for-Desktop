@@ -85,7 +85,15 @@ export function initDiffusionStudio() {
         if (genText) genText.textContent = "GENERANDO...";
       }
 
-      if (progressContainer) progressContainer.style.display = "flex";
+      if (progressContainer) {
+        progressContainer.style.display = "flex";
+        const progFill = document.querySelector("#gen-progress-fill");
+        const progStatus = document.querySelector("#prog-status-text");
+        const progPercent = document.querySelector("#prog-percent-text");
+        if (progFill) progFill.style.width = "0%";
+        if (progStatus) progStatus.textContent = `INFERENCIA PASO 1/${steps}`;
+        if (progPercent) progPercent.textContent = "0%";
+      }
 
       try {
         const res = await fetch(`${API_BASE}/diffusion/generate`, {

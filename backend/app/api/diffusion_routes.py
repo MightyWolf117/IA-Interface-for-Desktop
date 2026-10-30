@@ -136,7 +136,25 @@ async def load_diffusion_model(request: LoadModelRequest):
     """
     Carga un modelo local o de Hugging Face aplicando la política de memoria seleccionada
     y el formato de transferencia de salida (Base64 vs Disco).
+    Transmite el progreso en tiempo real de la descarga si es un modelo público.
     """
+    loop = asyncio.get_running_loop()
+
+    def download_progress_callback(model_id: str, downloaded_bytes: int, total_bytes: int, current_file: str, pct: float):
+        payload = json.dumps({
+            "type": "download_progress",
+            "model_id": model_id,
+            "downloaded_mb": round(downloaded_bytes / (1024 * 1024), 1),
+            "total_mb": round(total_bytes / (1024 * 1024), 1),
+            "current_file": current_file,
+            "percent": pct
+        })
+        for ws in list(active_telemetry_sockets):
+            try:
+                loop.call_soon_threadsafe(asyncio.create_task, ws.send_text(payload))
+            except Exception:
+                pass
+
     try:
         result = await asyncio.to_thread(
             DiffusionEngine.load_model,
@@ -146,7 +164,8 @@ async def load_diffusion_model(request: LoadModelRequest):
             lora_path=request.lora_path,
             lora_weight=request.lora_weight,
             scheduler=request.scheduler,
-            download_dir=request.download_dir
+            download_dir=request.download_dir,
+            download_callback=download_progress_callback
         )
         return result
     except Exception as e:

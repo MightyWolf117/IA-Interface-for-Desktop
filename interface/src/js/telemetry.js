@@ -74,6 +74,23 @@ export function initWebSocketTelemetry() {
           if (progStatus) progStatus.textContent = `INFERENCIA PASO ${data.step}/${data.total_steps}`;
           if (progPercent) progPercent.textContent = `${data.percent}%`;
         }
+
+        // Model Download Progress packet
+        if (data.type === "download_progress") {
+          const dlContainer = document.querySelector("#modal-download-progress-container");
+          const dlFill = document.querySelector("#modal-download-progress-fill");
+          const dlStatus = document.querySelector("#modal-download-status");
+          const dlPercent = document.querySelector("#modal-download-percent");
+          const dlFile = document.querySelector("#modal-download-file");
+          const dlMb = document.querySelector("#modal-download-mb");
+
+          if (dlContainer) dlContainer.style.display = "block";
+          if (dlFill) dlFill.style.width = `${data.percent}%`;
+          if (dlStatus) dlStatus.textContent = `DESCARGANDO MODELO (${data.percent}%)`;
+          if (dlPercent) dlPercent.textContent = `${data.percent}%`;
+          if (dlFile && data.current_file) dlFile.textContent = data.current_file;
+          if (dlMb && data.total_mb > 0) dlMb.textContent = `${data.downloaded_mb} / ${data.total_mb} MB`;
+        }
       } catch (err) {
         console.error("Error al procesar paquete de telemetría:", err);
       }

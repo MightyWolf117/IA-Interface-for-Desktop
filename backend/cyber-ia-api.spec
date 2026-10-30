@@ -66,7 +66,9 @@ hidden_imports = [
     'app.services.architectures.registry',
 ]
 
-datas = []
+datas = [
+    ('app/core/configs', 'app/core/configs'),
+]
 binaries = []
 
 # Collect all lazy-loaded submodules, data assets, and binaries for AI inference engines
