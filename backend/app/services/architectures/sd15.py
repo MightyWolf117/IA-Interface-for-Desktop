@@ -160,6 +160,16 @@ class SD15Adapter(BaseModelAdapter):
         generator = torch.Generator(device="cpu").manual_seed(seed)
         step_count = max(int(steps), 1)
 
+        kwargs = {
+            "prompt": prompt,
+            "negative_prompt": negative_prompt,
+            "width": width,
+            "height": height,
+            "num_inference_steps": step_count,
+            "guidance_scale": guidance_scale,
+            "generator": generator
+        }
+
         if step_callback:
             import inspect
 

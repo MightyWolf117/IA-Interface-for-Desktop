@@ -6,6 +6,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-31
+
+### Fixed
+- **Corrección de `NameError: name 'kwargs' is not defined` durante la Inferencia**:
+  - Declaración y estructuración previa obligatoria del diccionario `kwargs` antes del bloque condicional de inyección de callbacks en [sdxl.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/sdxl.py), [sd15.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/sd15.py) y [auto_diffusers.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/architectures/auto_diffusers.py), permitiendo la generación fluida de imágenes en checkpoints locales SDXL y SD 1.5 (`reddFurryMixSDXL`, `Indigo Void Furry Fused XL`).
+
 ## [1.1.0] - 2026-10-30
 
 ### Added

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Release](https://img.shields.io/badge/Versión-v1.1.0-00f0ff?style=for-the-badge)
+![Release](https://img.shields.io/badge/Versión-v1.1.1-00f0ff?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Estado-Estable_Producción-00ff66?style=for-the-badge)
 ![Target](https://img.shields.io/badge/Arquitectura-Multi--Motor_IA-ff0055?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Plataforma-Windows_10%2F11_x64-7928ca?style=for-the-badge)
@@ -194,6 +194,13 @@ graph TD
   - Monitor continuo en vivo para Anima DiT en [anima.py](backend/app/services/architectures/anima.py).
   - Reinicio automático del contador de pasos en [diffusion.js](interface/src/js/diffusion.js).
 
+### Parche 11: Corrección de `NameError: name 'kwargs' is not defined` en Checkpoints Monolíticos
+- **Problema Reportado**: Al ejecutar inferencias en modelos locales monolitícos SDXL y SD 1.5 (como `reddFurryMixSDXL` e `Indigo Void Furry Fused XL`), el motor fallaba inmediatamente con `NameError: name 'kwargs' is not defined`.
+- **Causa Raíz**: Durante la integración de los callbacks de pasos, la inicialización del diccionario de argumentos `kwargs` fue omitida antes del bloque condicional `if step_callback:`, provocando que la asignación `kwargs["callback_on_step_end"] = ...` fallara por variable no declarada.
+- **Solución Implementada**:
+  - Declaración e inicialización estricta de `kwargs` antes de la inyección de callbacks en [sdxl.py](backend/app/services/architectures/sdxl.py), [sd15.py](backend/app/services/architectures/sd15.py) y [auto_diffusers.py](backend/app/services/architectures/auto_diffusers.py).
+  - Verificación unitaria y validación de ejecución exitosa en generación real.
+
 ---
 
 ## 3. Métricas de Rendimiento y Consumo de Hardware
@@ -221,7 +228,7 @@ Pruebas ejecutadas en entorno real con tarjeta gráfica **NVIDIA GeForce RTX 305
 
 <div align="center">
 
-Documento técnico elaborado y verificado para el lanzamiento oficial **v1.0.0**.  
+Documento técnico elaborado y verificado para el lanzamiento oficial **v1.1.1**.  
 **CYBER-IA Desktop Engineering Team**
 
 </div>
