@@ -5,7 +5,7 @@
 ; ================================================================================
 
 #define MyAppName "CYBER-IA"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "MightyWolf117"
 #define MyAppURL "https://github.com/MightyWolf117/IA-Interface-for-Desktop"
 #define MyAppExeName "cyber-ia.exe"
@@ -43,7 +43,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 
 ; Configuración de Salida y Compresión de Alto Rendimiento (>2 GB soportado nativamente)
 OutputDir=output
-OutputBaseFilename=CYBER-IA_1.0.0_x64-setup
+OutputBaseFilename=CYBER-IA_{#MyAppVersion}_x64-setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 DiskSpanning=no

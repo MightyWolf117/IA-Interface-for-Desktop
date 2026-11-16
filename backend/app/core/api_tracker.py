@@ -1,6 +1,6 @@
 import time
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -23,7 +23,7 @@ class APITracker:
     def record_request(cls, method: str, path: str, status_code: int, duration_ms: float, client: str):
         cls._request_logs.appendleft({
             "id": f"req_{int(time.time() * 1000)}",
-            "timestamp": datetime.utcnow().strftime("%H:%M:%S.%f")[:-3],
+            "timestamp": datetime.now(timezone.utc).strftime("%H:%M:%S.%f")[:-3],
             "method": method,
             "path": path,
             "status_code": status_code,

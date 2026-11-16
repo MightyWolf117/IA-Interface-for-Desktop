@@ -10,6 +10,11 @@ import shutil
 from typing import Optional
 
 
+def get_app_dir() -> str:
+    """Retorna la ruta al directorio app del backend."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 def get_outputs_dir() -> str:
     """
     Obtiene y asegura la existencia del directorio de salidas (outputs) para imágenes generadas.

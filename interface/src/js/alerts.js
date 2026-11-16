@@ -5,6 +5,9 @@
 import { API_BASE } from "./config.js";
 import { cyberAlert } from "./dialog.js";
 
+// Re-export for compatibility across HUD modules
+export { cyberAlert as showCustomAlert } from "./dialog.js";
+
 let alertBannerEl = null;
 let alertMetricTagEl = null;
 let alertDescEl = null;

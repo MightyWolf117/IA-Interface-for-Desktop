@@ -274,9 +274,9 @@ async def websocket_telemetry_stream(websocket: WebSocket):
 
     try:
         while True:
-            # Gather telemetry snapshot (< 80ms delay)
+            # Gather telemetry snapshot with cached/dynamic hardware detection
             telemetry = HardwareDetector.get_full_telemetry()
-            model_status = DiffusionEngine.get_status()
+            model_status = DiffusionEngine.get_status(gpu_info=telemetry.get("gpu"))
 
             payload = {
                 "type": "hardware_telemetry",
@@ -285,10 +285,14 @@ async def websocket_telemetry_stream(websocket: WebSocket):
                 "model_status": model_status
             }
             await websocket.send_text(json.dumps(payload))
-            # Sleep 75ms for high-frequency low-overhead updates (sub-100ms)
-            await asyncio.sleep(0.075)
+
+            # Adaptive telemetry polling: 80ms during active generation for live progress,
+            # 750ms during idle to reduce unnecessary CPU/GPU driver polling and WebView2 DOM updates by ~90%
+            is_active = DiffusionEngine.is_generating()
+            await asyncio.sleep(0.08 if is_active else 0.75)
     except WebSocketDisconnect:
-        active_telemetry_sockets.remove(websocket)
+        if websocket in active_telemetry_sockets:
+            active_telemetry_sockets.remove(websocket)
     except Exception:
         if websocket in active_telemetry_sockets:
             active_telemetry_sockets.remove(websocket)

@@ -47,6 +47,7 @@ hidden_imports = [
     'app.main',
     'app.api',
     'app.api.routes',
+    'app.api.chat_routes',
     'app.api.diffusion_routes',
     'app.core',
     'app.core.hardware',
@@ -55,6 +56,10 @@ hidden_imports = [
     'app.schemas',
     'app.schemas.chat',
     'app.services',
+    'app.services.chat_engine',
+    'app.services.text_model_manager',
+    'app.services.web_search_service',
+    'app.services.multimedia_parser',
     'app.services.diffusion_engine',
     'app.services.model_scanner',
     'app.services.architectures',
@@ -64,11 +69,20 @@ hidden_imports = [
     'app.services.architectures.anima',
     'app.services.architectures.auto_diffusers',
     'app.services.architectures.registry',
+    'pypdf',
+    'docx',
+    'openpyxl',
+    'bs4',
+    'multipart',
 ]
 
 datas = [
     ('app/core/configs', 'app/core/configs'),
 ]
+if os.path.isfile('app/core/model_profiles.json'):
+    datas.append(('app/core/model_profiles.json', 'app/core'))
+if os.path.isfile('app/core/llm_config.json'):
+    datas.append(('app/core/llm_config.json', 'app/core'))
 binaries = []
 
 # Collect all lazy-loaded submodules, data assets, and binaries for AI inference engines

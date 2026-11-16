@@ -4,7 +4,7 @@ import os
 import time
 import base64
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, Callable, Type
 
 from app.core.hardware import HardwareDetector
@@ -62,17 +62,42 @@ class DiffusionEngine:
     _transfer_mode: str = "base64"
     _auxiliaries: Dict[str, Any] = {}
     _device: str = "cuda" if (DIFFUSERS_AVAILABLE and torch.cuda.is_available()) else "cpu"
+    _is_generating: bool = False
 
     @classmethod
-    def get_status(cls) -> Dict[str, Any]:
-        vram_alloc = 0
-        vram_res = 0
+    def is_generating(cls) -> bool:
+        """Indica si el motor está ejecutando una inferencia de generación en este instante."""
+        return cls._is_generating
+
+    @classmethod
+    def release_vram(cls) -> Dict[str, Any]:
+        """
+        Libera la memoria de tensores y vacía las cachés de PyTorch y CUDA
+        para dar prioridad a otros procesos (como LLMs o cambio de modo) sin reiniciar la API.
+        """
         if DIFFUSERS_AVAILABLE and torch.cuda.is_available():
             try:
-                vram_alloc = round(torch.cuda.memory_allocated() / (1024 * 1024), 2)
-                vram_res = round(torch.cuda.memory_reserved() / (1024 * 1024), 2)
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
             except Exception:
                 pass
+        gc.collect()
+        return HardwareDetector.get_gpu_info()
+
+    @classmethod
+    def get_status(cls, gpu_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if gpu_info is not None:
+            vram_alloc = gpu_info.get("vram_allocated_mb", 0)
+            vram_res = gpu_info.get("vram_reserved_mb", 0)
+        else:
+            vram_alloc = 0
+            vram_res = 0
+            if DIFFUSERS_AVAILABLE and torch.cuda.is_available():
+                try:
+                    vram_alloc = round(torch.cuda.memory_allocated() / (1024 * 1024), 2)
+                    vram_res = round(torch.cuda.memory_reserved() / (1024 * 1024), 2)
+                except Exception:
+                    pass
 
         arch_info = {}
         if cls._active_adapter:
@@ -94,7 +119,8 @@ class DiffusionEngine:
             "device": cls._device,
             "auxiliaries": cls._auxiliaries,
             "vram_allocated_mb": vram_alloc,
-            "vram_reserved_mb": vram_res
+            "vram_reserved_mb": vram_res,
+            "is_generating": cls._is_generating
         }
 
     @classmethod
@@ -298,43 +324,47 @@ class DiffusionEngine:
         if seed is None or seed < 0:
             seed = int(time.time() * 1000) % 2147483647
 
-        # Check if pipeline is ready or in preview mode
-        if cls._pipeline is None:
-            img = Image.new("RGB", (width, height), color=(9, 12, 21))
-            draw = ImageDraw.Draw(img)
-            draw.rectangle([10, 10, width - 10, height - 10], outline=(0, 240, 255), width=2)
-            draw.text((25, 25), "CYBER-DIFFUSION // PREVIEW", fill=(0, 240, 255))
-            draw.text((25, 55), f"PROMPT: {prompt[:40]}...", fill=(255, 0, 85))
-            draw.text((25, 85), f"SEED: {seed} | STEPS: {steps}", fill=(255, 183, 0))
-            draw.text((25, 115), "AVISO: Carga un modelo en 'Configurar Modelo' para inferencia real.", fill=(130, 145, 175))
-        else:
-            # Inferencia a través del adaptador activo
-            if cls._active_adapter is not None:
-                img = cls._active_adapter.generate(
-                    pipeline=cls._pipeline,
-                    prompt=prompt,
-                    negative_prompt=negative_prompt,
-                    width=width,
-                    height=height,
-                    steps=steps,
-                    guidance_scale=guidance_scale,
-                    seed=seed,
-                    step_callback=step_callback
-                )
+        cls._is_generating = True
+        try:
+            # Check if pipeline is ready or in preview mode
+            if cls._pipeline is None:
+                img = Image.new("RGB", (width, height), color=(9, 12, 21))
+                draw = ImageDraw.Draw(img)
+                draw.rectangle([10, 10, width - 10, height - 10], outline=(0, 240, 255), width=2)
+                draw.text((25, 25), "CYBER-DIFFUSION // PREVIEW", fill=(0, 240, 255))
+                draw.text((25, 55), f"PROMPT: {prompt[:40]}...", fill=(255, 0, 85))
+                draw.text((25, 85), f"SEED: {seed} | STEPS: {steps}", fill=(255, 183, 0))
+                draw.text((25, 115), "AVISO: Carga un modelo en 'Configurar Modelo' para inferencia real.", fill=(130, 145, 175))
             else:
-                # Fallback estándar
-                generator = torch.Generator(device="cpu").manual_seed(seed)
-                kwargs = {
-                    "prompt": prompt,
-                    "negative_prompt": negative_prompt,
-                    "width": width,
-                    "height": height,
-                    "num_inference_steps": steps,
-                    "guidance_scale": guidance_scale,
-                    "generator": generator
-                }
-                result = cls._pipeline(**kwargs)
-                img = result.images[0]
+                # Inferencia a través del adaptador activo
+                if cls._active_adapter is not None:
+                    img = cls._active_adapter.generate(
+                        pipeline=cls._pipeline,
+                        prompt=prompt,
+                        negative_prompt=negative_prompt,
+                        width=width,
+                        height=height,
+                        steps=steps,
+                        guidance_scale=guidance_scale,
+                        seed=seed,
+                        step_callback=step_callback
+                    )
+                else:
+                    # Fallback estándar
+                    generator = torch.Generator(device="cpu").manual_seed(seed)
+                    kwargs = {
+                        "prompt": prompt,
+                        "negative_prompt": negative_prompt,
+                        "width": width,
+                        "height": height,
+                        "num_inference_steps": steps,
+                        "guidance_scale": guidance_scale,
+                        "generator": generator
+                    }
+                    result = cls._pipeline(**kwargs)
+                    img = result.images[0]
+        finally:
+            cls._is_generating = False
 
         latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
         vram_info = HardwareDetector.get_gpu_info()
@@ -342,7 +372,7 @@ class DiffusionEngine:
         # Format output: Base64 or Disk
         if cls._transfer_mode == "disk":
             outputs_path = get_outputs_dir()
-            filename = f"{gen_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.png"
+            filename = f"{gen_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.png"
             file_path = os.path.join(outputs_path, filename)
             img.save(file_path, format="PNG")
             image_data = f"/outputs/{filename}"

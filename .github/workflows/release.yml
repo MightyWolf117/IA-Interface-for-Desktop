@@ -89,7 +89,7 @@ jobs:
           Copy-Item -Path "interface\src-tauri\INSTALLER_LICENSE.txt" -Destination "staging-portable\"
           Copy-Item -Path "README.md" -Destination "staging-portable\"
           Copy-Item -Path "LICENSE" -Destination "staging-portable\"
-          7z a -t7z -m0=lzma2 -mx=9 -ms=on release-artifacts\CYBER-IA-v1.0.0-Windows-x64-Portable.7z .\staging-portable\*
+          7z a -t7z -m0=lzma2 -mx=9 -ms=on release-artifacts\CYBER-IA-${{ github.ref_name }}-Windows-x64-Portable.7z .\staging-portable\*
 
           # Auditoría de tamaños para verificar cumplimiento de límites de GitHub Releases (< 2 GiB)
           Get-ChildItem -Path "installer\output", "release-artifacts" -File | ForEach-Object {
@@ -119,7 +119,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          name: 'CYBER-IA v1.0.0 // Official Desktop Release'
+          name: 'CYBER-IA ${{ github.ref_name }} // Official Desktop Release'
           body: |
             ## ⚡ CYBER-IA // Instalador Oficial de Escritorio
             

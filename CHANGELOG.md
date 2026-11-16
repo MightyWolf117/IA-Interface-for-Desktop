@@ -6,6 +6,59 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-16
+
+### Fixed
+- **Corrección de SyntaxError de Importación en `chat.js`**:
+  - Sustitución de `import { showCustomAlert } from "./alerts.js"` por `import { cyberAlert } from "./dialog.js"` en [chat.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/chat.js), resolviendo el error `Uncaught SyntaxError: The requested module './alerts.js' does not provide an export named 'showCustomAlert'` que impedía la evaluación del árbol de módulos ES y congelaba la interacción en la interfaz WebView2.
+  - Exportación de alias de compatibilidad `export { cyberAlert as showCustomAlert } from "./dialog.js"` en [alerts.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/alerts.js) para evitar regresiones entre módulos del HUD.
+
+### Added
+- **Gestión de Servicio Ollama en Segundo Plano y Alerta Interactiva (v1.2.0)**:
+  - Detección rápida y silenciosa de disponibilidad de Ollama (`is_ollama_available`) mediante comprobación nativa de socket TCP sin generar ruidos ni trazas de excepción (`WinError 10061`) en los registros de la consola.
+  - Alerta Cyberpunk interactiva (`cyberConfirm`) en [chat.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/chat.js) que informa al usuario cuando el servicio Ollama está apagado y ofrece encenderlo de inmediato en segundo plano.
+  - Endpoint `POST /api/v1/chat/ollama/start` en [chat_routes.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/api/chat_routes.py) para ejecutar `ollama serve` desacoplado con `CREATE_NO_WINDOW`, enlazando dinámicamente la ruta personalizada de modelos con `OLLAMA_MODELS`.
+  - Tira de estado interactiva (`#chat-ollama-strip`) en la barra lateral del HUD con indicador visual neón (verde si está online, ámbar/magenta si está apagado) y botón `⚡ ENCENDER` para arranque bajo demanda en cualquier momento.
+- **Ruta Personalizada de Modelos LLM y Escaneo Avanzado (.GGUF y Almacén Ollama)**:
+  - Selector de carpeta local personalizada en [index.html](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/index.html) con el mismo flujo de usuario que el motor de difusión (`📁 EXAMINAR...` mediante diálogo nativo de Windows vía `/api/v1/system/browse-folder` y botón `🔄 ESCANEAR`).
+  - Escáner en [text_model_manager.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/text_model_manager.py) capaz de descubrir e indexar modelos tanto desde archivos directos `.gguf`/`.bin` como desde el árbol de manifiestos y capas de Ollama (`manifests/registry.ollama.ai/...`), identificando modelos existentes (ej. `gemma3:4b`, `phi3:mini`, `qwen2.5-coder:7b`, `qwen3:8b`), tamaños en GB y flags de visión multimodal incluso antes de que el daemon de Ollama esté en línea.
+  - Persistencia de la ruta configurada en `backend/app/core/llm_config.json` y `localStorage` del frontend.
+- **Módulo de Chat LLM Multimodal con Soporte para Modelos Externos y Búsqueda Web (Fase 2 - v1.2.0)**:
+  - **Soporte y Detección Automática de Modelos Externos (Ollama y GGUF Locales)**:
+    - Implementación de [text_model_manager.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/text_model_manager.py) para descubrir modelos descargados mediante Ollama (`http://127.0.0.1:11434`) o alojados localmente en carpetas externas (`e:\modelosLLM` o `models/`).
+    - Detección automática de familias de arquitectura (`llama3`, `qwen`, `mistral`, `gemma`, `deepseek`, `phi`, `llava`) y flags de capacidades de visión multimodal.
+    - Soporte para selección y anulación manual del core arquitectónico desde la interfaz para modelos importados sin metadatos.
+  - **Panel de Ajustes Específicos y Personalización por Modelo**:
+    - Modal Cyberpunk dedicado (`#modal-chat-settings`) con persistencia en `backend/app/core/model_profiles.json`.
+    - Configuración individual por modelo: System Prompt / Instrucciones Personalizadas, Ventana de Contexto (1024–32768 tokens), Máximo de tokens de salida, Temperatura, Top-P, Penalización de repetición y Búsqueda web por defecto.
+  - **Acceso a Internet en Tiempo Real mediante API (RAG Web)**:
+    - Implementación de [web_search_service.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/web_search_service.py) con soporte nativo para **DuckDuckGo** (gratuito, sin claves ni límites estrictos) y APIs externas configurables (Tavily).
+    - Botón interactivo en la consola `🌐 WEB SEARCH: ON/OFF` e inyección de contexto actualizado en el prompt con cuadro de fuentes y enlaces web clicables.
+  - **Soporte Multimedia y Capturas del Portapapeles (Ctrl+V)**:
+    - Implementación de [multimedia_parser.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/multimedia_parser.py) para análisis de documentos (PDF, Word DOCX, texto plano) y conversión automática de hojas de cálculo (Excel XLSX y CSV) a tablas Markdown Grid.
+    - Captura instantánea de capturas de pantalla desde el portapapeles (`Ctrl+V`) con previsualización en chips flotantes (`#chat-attachments-tray`) y codificación Base64 para modelos multimodales (LLaVA / Visión).
+  - **Generación en Streaming Progresivo (Token Streaming)**:
+    - Implementación de [chat_engine.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/chat_engine.py) y endpoint `/api/v1/chat/stream` vía Server-Sent Events (SSE).
+    - Renderizador Markdown en [chat.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/chat.js) con cursor palpitante, formateo de bloques de código y botón flotante de copia en un clic.
+    - Acciones de sesión: "Nueva Conversación", "Limpiar Chat" y "Exportar Conversación a Markdown".
+
+### Changed
+- **Optimización de Recursos y Supresión de Redundancias (Fase 1 - v1.2.0)**:
+  - **Detector de Hardware Optimizado con Caché de Propiedades Estáticas**:
+    - Reestructuración de [hardware.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/core/hardware.py) para cachear al inicio los atributos invariantes de la GPU (nombre del adaptador, memoria total y umbrales de VRAM al 40%, 65% y 100%), eliminando consultas continuas y redundantes a `get_device_properties` en cada ciclo de telemetría.
+    - Inicialización única y persistencia del controlador NVML (`_init_nvml`), evitando la sobrecarga recurrente de llamadas `pynvml.nvmlInit()`.
+    - Eliminación de consultas duplicadas de VRAM: `DiffusionEngine.get_status()` reutiliza las métricas obtenidas por `HardwareDetector` en el bucle WebSocket.
+  - **Bucle de Telemetría WebSocket Adaptativo**:
+    - Ajuste dinámico de frecuencia en `/ws/telemetry` en [diffusion_routes.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/api/diffusion_routes.py): emisión a **80 ms** durante inferencias activas para máxima fluidez, y tasa en reposo (idle) ajustada a **750 ms**, reduciendo el consumo innecesario de ciclos de CPU y llamadas a controladores gráficos en ~90%.
+  - **Optimización del Renderizado de Telemetría en Frontend**:
+    - Actualización condicional en [telemetry.js](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/interface/src/js/telemetry.js) que evita mutaciones y recalculo de layouts en WebView2 si los valores textuales de VRAM y RAM no han cambiado.
+    - Limpieza exhaustiva de callbacks y temporizadores de reconexión WebSocket evitando fugas de memoria en la interfaz.
+  - **Gestor de Recursos VRAM y Coexistencia**:
+    - Incorporación de `is_generating()` y `release_vram()` en [diffusion_engine.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/diffusion_engine.py) para permitir vaciar la memoria de tensores y cachés de PyTorch/CUDA cuando se pase a tareas de LLM o se liberen recursos.
+  - **Eliminación de Deprecaciones y Warnings**:
+    - Sustitución de `datetime.utcnow()` por `datetime.now(timezone.utc)` en [api_tracker.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/core/api_tracker.py), [diffusion_engine.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/services/diffusion_engine.py) y [chat.py](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/app/schemas/chat.py).
+    - Actualización de dependencias en [requirements.txt](file:///e:/Desarrollos/IA%20Interface/IA-Interface-for-Desktop/backend/requirements.txt) fijando `torch 2.14.1+cu126` y `diffusers 0.42.1` compatibles con Python 3.15.
+
 ## [1.1.1] - 2026-10-31
 
 ### Fixed

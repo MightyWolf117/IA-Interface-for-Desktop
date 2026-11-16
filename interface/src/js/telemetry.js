@@ -1,5 +1,5 @@
 // ==========================================================================
-// CYBER-IA // REAL-TIME TELEMETRY (<100ms WEBSOCKET STREAM)
+// CYBER-IA // REAL-TIME TELEMETRY (ADAPTIVE WEBSOCKET STREAM)
 // ==========================================================================
 
 import { WS_TELEMETRY_URL } from "./config.js";
@@ -7,6 +7,9 @@ import { evaluateSystemLimits } from "./alerts.js";
 
 let telemetrySocket = null;
 let telemetryReconnectTimer = null;
+let lastVramStr = "";
+let lastRamStr = "";
+let lastDotClass = "";
 
 export function initWebSocketTelemetry() {
   const vramText = document.querySelector("#hud-vram-text");
@@ -15,11 +18,20 @@ export function initWebSocketTelemetry() {
   const vramDot = document.querySelector("#vram-dot");
 
   try {
+    if (telemetrySocket) {
+      telemetrySocket.onopen = null;
+      telemetrySocket.onmessage = null;
+      telemetrySocket.onclose = null;
+      telemetrySocket.onerror = null;
+      try { telemetrySocket.close(); } catch (_) {}
+      telemetrySocket = null;
+    }
+
     telemetrySocket = new WebSocket(WS_TELEMETRY_URL);
 
     telemetrySocket.onopen = () => {
       if (wsText) {
-        wsText.textContent = "ONLINE (<80ms)";
+        wsText.textContent = "ONLINE (ADAPTATIVO)";
         wsText.style.color = "var(--neon-green)";
       }
     };
@@ -28,7 +40,7 @@ export function initWebSocketTelemetry() {
       try {
         const data = JSON.parse(event.data);
 
-        // Hardware Telemetry packet (<80ms)
+        // Hardware Telemetry packet (adaptive: 80ms inferencia / 750ms reposo)
         if (data.type === "hardware_telemetry") {
           const gpu = data.telemetry?.gpu;
           const ram = data.telemetry?.system;
@@ -38,11 +50,17 @@ export function initWebSocketTelemetry() {
               const alloc = Math.round(gpu.vram_allocated_mb || 0);
               const total = Math.round(gpu.vram_total_mb);
               const pct = Math.round((alloc / total) * 100);
-              vramText.textContent = `${alloc} / ${total} MB [${pct}%]`;
+              const vramStr = `${alloc} / ${total} MB [${pct}%]`;
+              if (vramStr !== lastVramStr) {
+                vramText.textContent = vramStr;
+                lastVramStr = vramStr;
+              }
 
               // Color coding status dot
-              if (vramDot) {
-                vramDot.className = "status-dot " + (pct > 80 ? "red" : pct > 45 ? "yellow" : "green");
+              const dotClass = "status-dot " + (pct > 80 ? "red" : pct > 45 ? "yellow" : "green");
+              if (vramDot && dotClass !== lastDotClass) {
+                vramDot.className = dotClass;
+                lastDotClass = dotClass;
               }
 
               // Real-time Critical Limits Safety Evaluation
@@ -50,15 +68,25 @@ export function initWebSocketTelemetry() {
                 evaluateSystemLimits(alloc, total, ram.ram_percent);
               }
             } else {
-              vramText.textContent = "SIN CUDA (MODO CPU)";
-              if (vramDot) vramDot.className = "status-dot yellow";
+              if (lastVramStr !== "CPU") {
+                vramText.textContent = "SIN CUDA (MODO CPU)";
+                lastVramStr = "CPU";
+              }
+              if (vramDot && lastDotClass !== "status-dot yellow") {
+                vramDot.className = "status-dot yellow";
+                lastDotClass = "status-dot yellow";
+              }
             }
           }
 
           if (ram && ramText) {
             const usedGb = (ram.ram_used_mb / 1024).toFixed(1);
             const totalGb = (ram.ram_total_mb / 1024).toFixed(1);
-            ramText.textContent = `${usedGb} / ${totalGb} GB [${ram.ram_percent}%]`;
+            const ramStr = `${usedGb} / ${totalGb} GB [${ram.ram_percent}%]`;
+            if (ramStr !== lastRamStr) {
+              ramText.textContent = ramStr;
+              lastRamStr = ramStr;
+            }
           }
         }
 

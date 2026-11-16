@@ -1,6 +1,10 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def get_utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class ChatMessage(BaseModel):
@@ -22,7 +26,7 @@ class ChatResponse(BaseModel):
     tokens_evaluated: int = Field(..., description="Cantidad de tokens procesados en el prompt")
     tokens_generated: int = Field(..., description="Cantidad de tokens generados en la respuesta")
     latency_ms: float = Field(..., description="Tiempo total de inferencia en milisegundos")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="Marca temporal UTC")
+    created_at: datetime = Field(default_factory=get_utc_now, description="Marca temporal UTC")
 
 
 class ModelInfo(BaseModel):
@@ -37,5 +41,5 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="Estado general del servicio ('healthy')")
     service: str = Field(..., description="Nombre del servicio backend")
     version: str = Field(..., description="Versión de la API")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Marca temporal UTC")
+    timestamp: datetime = Field(default_factory=get_utc_now, description="Marca temporal UTC")
     vram_status: Optional[str] = Field(default="optimal", description="Estado de memoria VRAM")
